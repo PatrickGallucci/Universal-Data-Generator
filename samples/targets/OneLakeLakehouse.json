@@ -1,0 +1,13 @@
+{
+  "targetType": "OneLakeLakehouse",
+  "name": "onelakelakehouse",
+  "enabled": true,
+  "authentication": {
+    "method": "EntraID"
+  },
+  "properties": {
+    "workspace": "My Workspace",
+    "lakehouse": "Bronze",
+    "path": "datagen"
+  }
+}

@@ -1,0 +1,55 @@
+using System.Reflection;
+using System.Text.Json;
+
+namespace UniDataGen.Configuration;
+
+/// <summary>A supported output locale: a BCP-47 locale code with its country.</summary>
+public sealed record LocaleInfo(string CountryCode, string Country, string Locale);
+
+/// <summary>
+/// The catalog of supported output locales and languages, loaded from embedded resources. The generated-value
+/// localization setting is validated against this catalog so a run uses only a known locale.
+/// </summary>
+public static class LocaleCatalog
+{
+    /// <summary>The default locale used when neither the run nor the entity sets one.</summary>
+    public const string DefaultLocale = "en-US";
+
+    private static readonly Lazy<IReadOnlyList<LocaleInfo>> LocaleList = new(LoadLocales);
+    private static readonly Lazy<IReadOnlyList<string>> LanguageList = new(LoadLanguages);
+    private static readonly Lazy<HashSet<string>> LocaleSet = new(
+        () => new HashSet<string>(LocaleList.Value.Select(l => l.Locale), StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>The supported locales, for example en-US and es-MX.</summary>
+    public static IReadOnlyList<LocaleInfo> Locales => LocaleList.Value;
+
+    /// <summary>The supported language names.</summary>
+    public static IReadOnlyList<string> Languages => LanguageList.Value;
+
+    /// <summary>True when the locale is in the catalog (case-insensitive).</summary>
+    public static bool IsSupported(string locale) => !string.IsNullOrWhiteSpace(locale) && LocaleSet.Value.Contains(locale);
+
+    /// <summary>Returns the catalog entry for a locale, or null when absent.</summary>
+    public static LocaleInfo? Find(string locale)
+        => Locales.FirstOrDefault(l => string.Equals(l.Locale, locale, StringComparison.OrdinalIgnoreCase));
+
+    private static IReadOnlyList<LocaleInfo> LoadLocales()
+        => JsonSerializer.Deserialize<List<LocaleInfo>>(ReadResource("locales.json"), JsonOptions) ?? [];
+
+    private static IReadOnlyList<string> LoadLanguages()
+        => JsonSerializer.Deserialize<List<string>>(ReadResource("languages.json"), JsonOptions) ?? [];
+
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
+    private static string ReadResource(string fileName)
+    {
+        Assembly assembly = typeof(LocaleCatalog).Assembly;
+        string resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(n => n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Embedded resource '{fileName}' not found.");
+
+        using Stream stream = assembly.GetManifestResourceStream(resourceName)!;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+}

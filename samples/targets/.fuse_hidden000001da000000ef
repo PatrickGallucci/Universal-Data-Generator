@@ -1,0 +1,12 @@
+{
+  "targetType": "Dataverse",
+  "name": "dataverse",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "environmentUrl": "https://myorg.crm.dynamics.com",
+    "table": "account"
+  }
+}

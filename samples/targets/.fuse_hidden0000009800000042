@@ -1,0 +1,13 @@
+{
+  "targetType": "ADLSGen2",
+  "name": "adlsgen2",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "accountName": "mydatalake",
+    "filesystem": "raw",
+    "directory": "datagen"
+  }
+}

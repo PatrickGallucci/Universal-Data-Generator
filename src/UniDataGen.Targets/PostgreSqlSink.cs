@@ -1,0 +1,165 @@
+using Azure.Core;
+using Azure.Identity;
+using UniDataGen.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
+
+namespace UniDataGen.Targets;
+
+/// <summary>
+/// Writes generated batches to a PostgreSQL target, including Azure Database for PostgreSQL. New records insert,
+/// Update updates by the configured key column, and Delete deletes by key. The target table must already exist.
+/// Authentication is a Microsoft Entra access token used as the password by default, or a username and password,
+/// or a full connection string.
+/// </summary>
+public sealed class PostgreSqlSink : ISink
+{
+    private const string EntraScope = "https://ossrdbms-aad.database.windows.net/.default";
+    private readonly TargetConfig _config;
+    private readonly string _schema;
+    private readonly string _table;
+    private readonly string? _keyColumn;
+    private readonly ILogger _logger;
+    private string? _connectionString;
+
+    public PostgreSqlSink(TargetConfig config, ILogger? logger = null)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        _config = config;
+        IReadOnlyDictionary<string, object?> p = config.Properties;
+        _table = PropertyBag.GetString(p, "table") ?? throw new InvalidOperationException("PostgreSQL target requires a 'table' property.");
+        _schema = PropertyBag.GetString(p, "schema") ?? "public";
+        _keyColumn = PropertyBag.GetString(p, "keyColumn");
+        _logger = logger ?? NullLogger.Instance;
+        TargetType = config.TargetType;
+    }
+
+    public SinkKind Kind => SinkKind.Batch;
+
+    public string TargetType { get; }
+
+    public async Task OpenAsync(CancellationToken cancellationToken)
+    {
+        _connectionString = await BuildConnectionStringAsync(cancellationToken).ConfigureAwait(false);
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("PostgreSQL target ready: {Schema}.{Table}.", _schema, _table);
+    }
+
+    public async Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (_connectionString is null)
+        {
+            throw new InvalidOperationException($"{nameof(OpenAsync)} must be called before {nameof(WriteAsync)}.");
+        }
+
+        if (batch.Records.Count == 0)
+        {
+            return;
+        }
+
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using NpgsqlTransaction transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        int written = 0;
+        foreach (GeneratedRecord record in batch.Records)
+        {
+            written += await ApplyAsync(connection, transaction, record, cancellationToken).ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Applied {Count} rows to {Schema}.{Table}.", written, _schema, _table);
+    }
+
+    private async Task<int> ApplyAsync(NpgsqlConnection connection, NpgsqlTransaction transaction, GeneratedRecord record, CancellationToken cancellationToken)
+    {
+        if (record.Action != RecordAction.New && _keyColumn is null)
+        {
+            _logger.LogDebug("Skipping {Action} for {Table}: no 'keyColumn' configured.", record.Action, _table);
+            return 0;
+        }
+
+        await using NpgsqlCommand command = connection.CreateCommand();
+        command.Transaction = transaction;
+        var columns = record.Fields.Keys.ToList();
+
+        switch (record.Action)
+        {
+            case RecordAction.New:
+                string insertCols = string.Join(", ", columns.Select(c => $"\"{c}\""));
+                string insertParams = string.Join(", ", columns.Select((_, i) => $"@p{i}"));
+                command.CommandText = $"INSERT INTO \"{_schema}\".\"{_table}\" ({insertCols}) VALUES ({insertParams});";
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    command.Parameters.AddWithValue($"@p{i}", record.Fields[columns[i]] ?? DBNull.Value);
+                }
+
+                break;
+
+            case RecordAction.Update:
+                var setColumns = columns.Where(c => !c.Equals(_keyColumn, StringComparison.OrdinalIgnoreCase)).ToList();
+                string setClause = string.Join(", ", setColumns.Select((c, i) => $"\"{c}\" = @p{i}"));
+                command.CommandText = $"UPDATE \"{_schema}\".\"{_table}\" SET {setClause} WHERE \"{_keyColumn}\" = @key;";
+                for (int i = 0; i < setColumns.Count; i++)
+                {
+                    command.Parameters.AddWithValue($"@p{i}", record.Fields[setColumns[i]] ?? DBNull.Value);
+                }
+
+                command.Parameters.AddWithValue("@key", record.Key);
+                break;
+
+            case RecordAction.Delete:
+                command.CommandText = $"DELETE FROM \"{_schema}\".\"{_table}\" WHERE \"{_keyColumn}\" = @key;";
+                command.Parameters.AddWithValue("@key", record.Key);
+                break;
+        }
+
+        return await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) > 0 ? 1 : 0;
+    }
+
+    private async Task<string> BuildConnectionStringAsync(CancellationToken cancellationToken)
+    {
+        IReadOnlyDictionary<string, object?> p = _config.Properties;
+        if (PropertyBag.GetString(p, "connectionString") is { } cs)
+        {
+            return cs;
+        }
+
+        string server = PropertyBag.GetString(p, "server") ?? throw new InvalidOperationException("PostgreSQL target requires a 'server' or 'connectionString' property.");
+        string database = PropertyBag.GetString(p, "database") ?? throw new InvalidOperationException("PostgreSQL target requires a 'database' property.");
+        string port = PropertyBag.GetString(p, "port") ?? "5432";
+        string sslMode = PropertyBag.GetString(p, "sslMode") ?? "Require";
+        string? username = PropertyBag.GetString(p, "username");
+        string? password = PropertyBag.GetString(p, "password");
+
+        var builder = new NpgsqlConnectionStringBuilder
+        {
+            Host = server,
+            Port = int.TryParse(port, out int parsed) ? parsed : 5432,
+            Database = database,
+            SslMode = Enum.TryParse(sslMode, ignoreCase: true, out SslMode mode) ? mode : SslMode.Require
+        };
+
+        if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+        {
+            builder.Username = username;
+            builder.Password = password;
+        }
+        else if (!string.IsNullOrWhiteSpace(username))
+        {
+            // Microsoft Entra: use an access token as the password.
+            AccessToken token = await new DefaultAzureCredential()
+                .GetTokenAsync(new TokenRequestContext([EntraScope]), cancellationToken)
+                .ConfigureAwait(false);
+            builder.Username = username;
+            builder.Password = token.Token;
+        }
+
+        return builder.ConnectionString;
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}

@@ -1,0 +1,49 @@
+using DataGen.Configuration;
+
+namespace DataGen.ConfigEditor.AppData;
+
+/// <summary>
+/// First-run seed values for the editor's local JSON files. Locales come from the core catalog; source types and
+/// target templates are seeded here so the editor is self-contained and the lists can be edited in JSON later.
+/// </summary>
+internal static class SeedData
+{
+    public static List<LocaleEntry> Locales()
+        => LocaleCatalog.Locales
+            .Select(l => new LocaleEntry { CountryCode = l.CountryCode, Country = l.Country, Locale = l.Locale })
+            .ToList();
+
+    public static List<string> SourceTypes() =>
+    [
+        "OLTP", "ERP", "CRM", "HCM", "LOB", "COLAB", "MARCOM", "SUP", "ECOM", "FIN", "DEL", "SEMI", "OFC", "PDF",
+        "IOT", "EVT", "CDC", "MQUE", "REST", "HOOK", "WSCR", "REF", "MAIN", "MID", "FFM", "LDW", "IMG", "VID",
+        "AUD", "EMAIL", "SOCIAL", "LOG", "SEC", "COST", "DEVOPS", "MARK", "EDI", "MAST"
+    ];
+
+    public static List<TargetTypeEntry> TargetTypes() =>
+    [
+        T("JsonFile", "Batch", "directory"),
+        T("Console", "Streaming"),
+        T("Null", "Batch"),
+        T("ADLSGen2", "Batch", "accountName", "filesystem", "directory"),
+        T("ADLSGen2Parquet", "Batch", "accountName", "filesystem", "directory"),
+        T("AzureBlobStorage", "Batch", "accountName", "container", "path"),
+        T("AzureFiles", "Batch", "accountName", "shareName", "directory"),
+        T("AzureDataShare", "Batch", "accountName", "container", "datasetName", "path"),
+        T("OneLakeLakehouse", "Batch", "workspace", "lakehouse", "path"),
+        T("AzureSqlDB", "Batch", "server", "database", "schema", "table", "keyColumn"),
+        T("OneLakeWarehouse", "Batch", "server", "database", "schema", "table", "keyColumn"),
+        T("PostgreSQL", "Batch", "server", "database", "schema", "table", "keyColumn", "username", "port", "sslMode"),
+        T("AzureCosmosDB", "Batch", "endpoint", "database", "container", "partitionKey"),
+        T("AzureAISearchIndex", "Batch", "endpoint", "indexName", "keyField"),
+        T("EventHubs", "Streaming", "namespace", "eventHub", "partitionKeyField"),
+        T("AzureServiceBus", "Streaming", "namespace", "entityName", "entityType"),
+        T("AzureEventGrid", "Streaming", "endpoint", "subjectPrefix"),
+        T("FabricEventhouse", "Streaming", "clusterUri", "database", "table", "ingestionMapping"),
+        T("Dataverse", "Batch", "environmentUrl", "table"),
+        T("DatabricksUC", "Batch", "workspaceUrl", "warehouseId", "catalog", "schema", "table", "keyColumn")
+    ];
+
+    private static TargetTypeEntry T(string type, string kind, params string[] properties)
+        => new() { TargetType = type, Kind = kind, Properties = [.. properties] };
+}

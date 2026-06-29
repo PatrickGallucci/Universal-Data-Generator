@@ -1,0 +1,46 @@
+# Configuration
+
+DataGenerator takes two inputs: a catalog workbook and a run configuration. The catalog is
+the menu you choose from. The run configuration is the order you place.
+
+## The catalog workbook
+
+The workbook `data-generator.xlsx` holds the reference data, read-only. The reader uses these
+sheets:
+
+| Sheet | Purpose |
+|-------|---------|
+| `Industry` | Industry verticals. Column A is the name, column B the description. |
+| `SourceType` | Source-system types. Columns: code, type, description. |
+| `Storage` | Target storage names. |
+| `Attributes` | Entity and attribute definitions (CDM and D365). The reader builds the entity catalog from this sheet. |
+
+The `Attributes` sheet drives the entity catalog. Each row carries the schema area, entity
+name, attribute name, CDM data type, and the attribute purpose. The reader groups rows by
+entity and resolves every entity's attribute list in one streaming pass.
+
+> **Note**: The reader streams the large `Attributes` sheet row by row, so a workbook with more
+> than one hundred thousand attribute rows loads without holding the whole sheet in memory.
+
+## The run configuration
+
+The run configuration is a JSON document with three parts: the run header, the entity profiles,
+and the targets. See [Run configuration](../guides/run-configuration.md) for the full reference,
+and [samples/run-config.sample.json](../../samples/run-config.sample.json) for a complete example.
+
+The run header names one industry and one source type by their workbook values. The loader
+validates them against the catalog, so a typo fails at load rather than mid-run.
+
+## Environment variables
+
+| Variable | Used by | Purpose |
+|----------|---------|---------|
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | All hosts | Routes logs to Application Insights. |
+| `DATAGEN_WORKBOOK` | Functions host | Path to the catalog workbook. |
+| `DATAGEN_CONFIG` | Functions host | Path to the run configuration. |
+| `DATAGEN_OFFLINE` | Functions host | Set to `true` to skip Foundry and use placeholder values. |
+
+## Next steps
+
+- [Quick start](./quick-start.md) runs a generation offline.
+- [Targets](../guides/targets.md) explains where generated data goes.

@@ -1,0 +1,64 @@
+# Hosts
+
+DataGenerator ships four hosts. Each one acquires a run configuration, hands it to the Core engine,
+and reports progress. None of them reimplements scheduling, value generation, or target writes.
+
+## PowerShell module
+
+A binary cmdlet module. It exports two cmdlets.
+
+| Cmdlet | Purpose |
+|--------|---------|
+| `Import-DataGenCatalog` | Writes the embedded catalog to the pipeline. |
+| `Start-DataGenRun` | Runs a configuration until stopped with Ctrl-C. |
+
+```powershell
+Import-Module ./hosts/DataGen.PowerShell/bin/Debug/net10.0/DataGen.PowerShell.dll
+Start-DataGenRun -ConfigPath ./run-config.json -Offline -Verbose
+```
+
+| Parameter | Description |
+|-----------|-------------|
+| `-ConfigPath` | Path to the run configuration. |
+| `-TickSeconds` | The engine tick interval. Defaults to 2. |
+| `-Offline` | Skips Foundry and uses placeholder values. |
+| `-AppInsightsConnectionString` | Routes logs to Application Insights. |
+
+## Azure Functions host
+
+An isolated worker. The `GeneratorTimer` function runs a bounded generation pass on a timer. It
+reads the workbook and run-config paths from app settings.
+
+| App setting | Purpose |
+|-------------|---------|
+| `DATAGEN_WORKBOOK` | Path to the catalog workbook. |
+| `DATAGEN_CONFIG` | Path to the run configuration. |
+| `DATAGEN_OFFLINE` | `true` to skip Foundry. |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights connection string. |
+
+> **Note**: The timer drives batch cadence. For continuous real-time generation that must survive
+> host recycles, promote the timer function to a Durable Functions orchestration. See
+> [Architecture overview](../architecture/overview.md).
+
+## WinForms client
+
+A desktop client for Windows. It loads the workbook into pick lists, builds each entity profile
+through a grid, previews boost ramp curves, selects targets, and runs locally or saves the run
+configuration. The toolbar has a field for the Application Insights connection string, and the
+log box mirrors every structured log line.
+
+## Configuration editor
+
+`DataGen.ConfigEditor` is a Windows desktop application for editing the run configuration through a property grid.
+It reads and writes the same run-config JSON the other hosts consume, and keeps its reference lists and
+preferences in local JSON files. See [Configuration editor](./config-editor.md).
+
+## Foundry agent tool
+
+A console wrapper that exposes the engine as a single callable operation for an Azure AI Foundry
+agent. The function schema is in
+[hosts/DataGen.Foundry.Tool/tool-manifest.json](../../hosts/DataGen.Foundry.Tool/tool-manifest.json).
+
+```bash
+DataGen.Foundry.Tool ./data-generator.xlsx ./run-config.json --offline --seconds 30
+```

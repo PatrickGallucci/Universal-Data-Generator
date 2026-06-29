@@ -1,0 +1,14 @@
+{
+  "targetType": "FabricEventhouse",
+  "name": "fabriceventhouse",
+  "enabled": true,
+  "authentication": {
+    "method": "EntraID"
+  },
+  "properties": {
+    "clusterUri": "https://xxxx.kusto.fabric.microsoft.com",
+    "database": "Telemetry",
+    "table": "Account",
+    "ingestionMapping": ""
+  }
+}

@@ -1,0 +1,40 @@
+using DataGen.Abstractions;
+
+namespace DataGen.Core;
+
+/// <summary>
+/// Decides which attributes the engine stamps (keys, audit stamps, state) and which the value provider fills.
+/// Routing is driven by the CDM Purpose column first, then by datatype for id-like fields.
+/// </summary>
+public static class AttributeClassifier
+{
+    private static readonly HashSet<string> SystemPurposes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "identifiedBy",
+        "createdOn",
+        "modifiedOn",
+        "representsStateWith"
+    };
+
+    private static readonly HashSet<string> SystemDataTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "entityId",
+        "guid",
+        "RefRecId"
+    };
+
+    /// <summary>True when the engine, not the value provider, owns this attribute.</summary>
+    public static bool IsSystemField(AttributeInfo attribute)
+    {
+        if (attribute.Purpose is { } purpose && SystemPurposes.Contains(purpose))
+        {
+            return true;
+        }
+
+        return SystemDataTypes.Contains(attribute.DataType);
+    }
+
+    /// <summary>The attributes the value provider should fill for an entity.</summary>
+    public static IReadOnlyList<AttributeInfo> SemanticAttributes(EntityInfo entity)
+        => entity.Attributes.Where(a => !IsSystemField(a)).ToList();
+}

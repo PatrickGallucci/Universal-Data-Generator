@@ -1,0 +1,49 @@
+# Installation
+
+This guide covers the prerequisites and how to build DataGenerator from source.
+
+## Prerequisites
+
+- The .NET 10 SDK. Confirm the version:
+
+  ```bash
+  dotnet --version
+  ```
+
+  The output starts with `10.`.
+
+- On Windows, the Windows desktop workload, which the WinForms host requires. The other
+  projects build on Windows, Linux, and macOS.
+
+## Get the source
+
+Clone or copy the project, then restore and build the solution:
+
+```bash
+dotnet build UniDataGen.slnx
+```
+
+The build produces the libraries, the four hosts, and the two test projects.
+
+## Build the WinForms host on a non-Windows machine
+
+The WinForms host targets `net10.0-windows`. To compile it for inspection on Linux or macOS,
+enable Windows targeting. The result compiles but does not run off Windows.
+
+```bash
+dotnet build UniDataGen.slnx -p:EnableWindowsTargeting=true
+```
+
+## Run the tests
+
+```bash
+dotnet test tests/DataGen.Core.Tests
+dotnet test tests/DataGen.Targets.Tests
+```
+
+Both projects run with no network access.
+
+## Next steps
+
+- [Configuration](./configuration.md) explains the catalog and the run config.
+- [Quick start](./quick-start.md) generates data offline.

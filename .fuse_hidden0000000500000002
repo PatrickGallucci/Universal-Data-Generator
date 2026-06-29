@@ -1,0 +1,76 @@
+# DataGenerator
+
+DataGenerator is a workbook-driven synthetic data engine. One C# Core library does the work:
+it reads a catalog, computes how many records each entity owes at a given moment, fills values
+through Azure AI Foundry, and writes to a target. Four thin hosts call that Core: a PowerShell
+module, an Azure Functions worker, a WinForms client, and an Azure AI Foundry agent tool.
+
+The target framework is `net10.0` / C# 14. The WinForms host targets `net10.0-windows` and runs
+on Windows only.
+
+## Features
+
+- One industry, one source type, and many entities per run, chosen from an Excel catalog.
+- Per-entity real-time or batch generation, with weekday/weekend day-part weighting and boost dates.
+- Azure AI Foundry value generation shaped by the industry and the CDM attribute model.
+- Six concrete target adapters: local NDJSON, console, null, ADLS Gen2 (NDJSON), ADLS Gen2
+  (Parquet), and Event Hubs. The remaining storage targets are scaffolded.
+- Structured logging through `ILogger` on every tier, routed to Azure Application Insights.
+
+## Quick start
+
+Generate data offline, with no Azure account, writing NDJSON to a local folder:
+
+```powershell
+Import-Module ./hosts/DataGen.PowerShell/bin/Debug/net10.0/DataGen.PowerShell.dll
+Start-DataGenRun -WorkbookPath ./data-generator.xlsx -ConfigPath ./samples/run-config.sample.json -Offline -Verbose
+```
+
+See [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md) for the full walkthrough.
+
+## Project layout
+
+```text
+DataGenerator.slnx
+  src/
+    DataGen.Abstractions        profile + catalog model, enums, IValueProvider, ISink
+    DataGen.Core                scheduling, boost math, accrual, batch cadence, orchestrator
+    DataGen.Configuration       workbook catalog reader, run-config loader and validator
+    DataGen.Generation.Foundry  IValueProvider backed by Azure AI Foundry
+    DataGen.Targets             ISink factory and the target adapters
+    DataGen.Observability       Application Insights logging helpers
+  hosts/
+    DataGen.PowerShell          binary cmdlet module
+    DataGen.Functions           isolated worker, timer-driven
+    DataGen.WinForms            desktop client (Windows only)
+    DataGen.Foundry.Tool        agent tool wrapper and console
+  tests/
+    DataGen.Core.Tests          boost, schedule, accrual, coordinator tests
+    DataGen.Targets.Tests       sink, formatter, and factory tests
+  docs/                         full documentation
+  samples/run-config.sample.json
+```
+
+## Build and test
+
+```bash
+dotnet build DataGenerator.slnx
+dotnet test tests/DataGen.Core.Tests
+dotnet test tests/DataGen.Targets.Tests
+```
+
+On a non-Windows machine, add `-p:EnableWindowsTargeting=true` to compile the WinForms host.
+
+## Documentation
+
+The full documentation is in [docs/](docs/README.md). Highlights:
+
+- [Run configuration](docs/guides/run-configuration.md)
+- [Targets](docs/guides/targets.md)
+- [Logging and Application Insights](docs/guides/logging.md)
+- [Architecture overview](docs/architecture/overview.md)
+- [Changelog](CHANGELOG.md)
+
+## License
+
+Internal project. Add a license before any external distribution.

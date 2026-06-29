@@ -1,0 +1,83 @@
+using Azure.Identity;
+using UniDataGen.Abstractions;
+using Kusto.Data;
+using Kusto.Data.Common;
+using Kusto.Ingest;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace UniDataGen.Targets;
+
+/// <summary>
+/// Streams generated records to a Microsoft Fabric Eventhouse (Kusto) table using streaming ingestion of
+/// line-delimited JSON. Authentication is Microsoft Entra. Streaming ingestion must be enabled on the table or
+/// database, and an ingestion mapping may be supplied for explicit column mapping.
+/// </summary>
+public sealed class EventhouseSink : ISink
+{
+    private readonly string _clusterUri;
+    private readonly string _database;
+    private readonly string _table;
+    private readonly string? _ingestionMapping;
+    private readonly ILogger _logger;
+    private IKustoIngestClient? _client;
+
+    public EventhouseSink(TargetConfig config, ILogger? logger = null)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        IReadOnlyDictionary<string, object?> p = config.Properties;
+        _clusterUri = PropertyBag.GetString(p, "clusterUri") ?? PropertyBag.GetString(p, "endpoint")
+            ?? throw new InvalidOperationException("FabricEventhouse target requires a 'clusterUri' (or 'endpoint') property.");
+        _database = PropertyBag.GetString(p, "database") ?? throw new InvalidOperationException("FabricEventhouse target requires a 'database' property.");
+        _table = PropertyBag.GetString(p, "table") ?? throw new InvalidOperationException("FabricEventhouse target requires a 'table' property.");
+        _ingestionMapping = PropertyBag.GetString(p, "ingestionMapping");
+        _logger = logger ?? NullLogger.Instance;
+        TargetType = config.TargetType;
+    }
+
+    public SinkKind Kind => SinkKind.Streaming;
+
+    public string TargetType { get; }
+
+    public Task OpenAsync(CancellationToken cancellationToken)
+    {
+        var kcsb = new KustoConnectionStringBuilder(_clusterUri)
+            .WithAadAzureTokenCredentialsAuthentication(new DefaultAzureCredential());
+        _client = KustoIngestFactory.CreateStreamingIngestClient(kcsb);
+        _logger.LogInformation("Eventhouse streaming client opened for {Database}.{Table}.", _database, _table);
+        return Task.CompletedTask;
+    }
+
+    public async Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (_client is null)
+        {
+            throw new InvalidOperationException($"{nameof(OpenAsync)} must be called before {nameof(WriteAsync)}.");
+        }
+
+        if (batch.Records.Count == 0)
+        {
+            return;
+        }
+
+        var properties = new KustoIngestionProperties(_database, _table) { Format = DataSourceFormat.json };
+        if (!string.IsNullOrWhiteSpace(_ingestionMapping))
+        {
+            properties.IngestionMapping = new IngestionMapping
+            {
+                IngestionMappingReference = _ingestionMapping
+            };
+        }
+
+        using var stream = new MemoryStream(NdjsonFormatter.SerializeToUtf8(batch), writable: false);
+        await _client.IngestFromStreamAsync(stream, properties).ConfigureAwait(false);
+        _logger.LogInformation("Ingested {Count} records into {Database}.{Table}.", batch.Records.Count, _database, _table);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _client?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

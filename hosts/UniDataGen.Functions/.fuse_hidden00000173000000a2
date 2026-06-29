@@ -1,0 +1,18 @@
+using DataGen.Targets;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+// Isolated-worker host. Application Insights captures host and application logs. Sinks are registered through
+// dependency injection with AddDataGenTargets, so adding a new target type later is a single AddSink call here.
+IHostBuilder builder = Host.CreateDefaultBuilder(args);
+builder.ConfigureFunctionsWorkerDefaults();
+builder.ConfigureServices(services =>
+{
+    services.AddApplicationInsightsTelemetryWorkerService();
+    services.ConfigureFunctionsApplicationInsights();
+    services.AddDataGenTargets();
+    // Example of a custom sink registered through DI:
+    // services.AddSink("MyTarget", SinkKind.Batch, (config, logger) => new MySink(config, logger));
+});
+await builder.Build().RunAsync();

@@ -1,0 +1,14 @@
+{
+  "targetType": "AzureCosmosDB",
+  "name": "azurecosmosdb",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "endpoint": "https://mycosmos.documents.azure.com",
+    "database": "sales",
+    "container": "accounts",
+    "partitionKey": "/accountId"
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "targets": [
+    {
+      "targetType": "JsonFile",
+      "name": "jsonfile",
+      "enabled": true,
+      "authentication": {
+        "method": "None"
+      },
+      "properties": {
+        "directory": "./out"
+      }
+    },
+    {
+      "targetType": "Console",
+      "name": "console",
+      "enabled": true,
+      "authentication": {
+        "method": "None"
+      },
+      "properties": {}
+    },
+    {
+      "targetType": "Null",
+      "name": "null",
+      "enabled": true,
+      "authentication": {
+        "method": "None"
+      },
+      "properties": {}
+    },
+    {
+      "targetType": "ADLSGen2",
+      "name": "adlsgen2",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "accountName": "mydatalake",
+        "filesystem": "raw",
+        "directory": "datagen"
+      }
+    },
+    {
+      "targetType": "ADLSGen2Parquet",
+      "name": "adlsgen2parquet",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "accountName": "mydatalake",
+        "filesystem": "curated",
+        "directory": "datagen"
+      }
+    },
+    {
+      "targetType": "AzureBlobStorage",
+      "name": "azureblobstorage",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "accountName": "myblobs",
+        "container": "datagen",
+        "path": "raw"
+      }
+    },
+    {
+      "targetType": "AzureFiles",
+      "name": "azurefiles",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "accountName": "myfiles",
+        "shareName": "datagen",
+        "directory": "raw"
+      }
+    },
+    {
+      "targetType": "AzureDataShare",
+      "name": "azuredatashare",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "accountName": "mybackingstore",
+        "container": "shared",
+        "datasetName": "accounts",
+        "path": "datagen"
+      }
+    },
+    {
+      "targetType": "OneLakeLakehouse",
+      "name": "onelakelakehouse",
+      "enabled": true,
+      "authentication": {
+        "method": "EntraID"
+      },
+      "properties": {
+        "workspace": "My Workspace",
+        "lakehouse": "Bronze",
+        "path": "datagen"
+      }
+    },
+    {
+      "targetType": "AzureSqlDB",
+      "name": "azuresqldb",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "server": "mysrv.database.windows.net",
+        "database": "sales",
+        "schema": "dbo",
+        "table": "Account",
+        "keyColumn": "accountId"
+      }
+    },
+    {
+      "targetType": "OneLakeWarehouse",
+      "name": "onelakewarehouse",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "server": "xxxx.datawarehouse.fabric.microsoft.com",
+        "database": "WarehouseDB",
+        "schema": "dbo",
+        "table": "Account",
+        "keyColumn": "accountId"
+      }
+    },
+    {
+      "targetType": "PostgreSQL",
+      "name": "postgresql",
+      "enabled": true,
+      "authentication": {
+        "method": "Password",
+        "keyVaultSecretRef": "kv://postgres-password"
+      },
+      "properties": {
+        "server": "mypg.postgres.database.azure.com",
+        "database": "sales",
+        "schema": "public",
+        "table": "account",
+        "keyColumn": "accountid",
+        "username": "datagen@mypg",
+        "port": "5432",
+        "sslMode": "Require"
+      }
+    },
+    {
+      "targetType": "AzureCosmosDB",
+      "name": "azurecosmosdb",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "endpoint": "https://mycosmos.documents.azure.com",
+        "database": "sales",
+        "container": "accounts",
+        "partitionKey": "/accountId"
+      }
+    },
+    {
+      "targetType": "AzureAISearchIndex",
+      "name": "azureaisearchindex",
+      "enabled": true,
+      "authentication": {
+        "method": "ApiKey",
+        "keyVaultSecretRef": "kv://search-admin-key"
+      },
+      "properties": {
+        "endpoint": "https://mysearch.search.windows.net",
+        "indexName": "accounts",
+        "keyField": "id"
+      }
+    },
+    {
+      "targetType": "EventHubs",
+      "name": "eventhubs",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "namespace": "my-eventhubs-ns",
+        "eventHub": "datagen-events",
+        "partitionKeyField": "accountId"
+      }
+    },
+    {
+      "targetType": "AzureServiceBus",
+      "name": "azureservicebus",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "namespace": "my-servicebus-ns",
+        "entityName": "datagen-queue",
+        "entityType": "Queue"
+      }
+    },
+    {
+      "targetType": "AzureEventGrid",
+      "name": "azureeventgrid",
+      "enabled": true,
+      "authentication": {
+        "method": "Key",
+        "keyVaultSecretRef": "kv://eventgrid-key"
+      },
+      "properties": {
+        "endpoint": "https://mytopic.eastus-1.eventgrid.azure.net/api/events",
+        "subjectPrefix": "datagen"
+      }
+    },
+    {
+      "targetType": "FabricEventhouse",
+      "name": "fabriceventhouse",
+      "enabled": true,
+      "authentication": {
+        "method": "EntraID"
+      },
+      "properties": {
+        "clusterUri": "https://xxxx.kusto.fabric.microsoft.com",
+        "database": "Telemetry",
+        "table": "Account",
+        "ingestionMapping": ""
+      }
+    },
+    {
+      "targetType": "Dataverse",
+      "name": "dataverse",
+      "enabled": true,
+      "authentication": {
+        "method": "ManagedIdentity"
+      },
+      "properties": {
+        "environmentUrl": "https://myorg.crm.dynamics.com",
+        "table": "account"
+      }
+    },
+    {
+      "targetType": "DatabricksUC",
+      "name": "databricksuc",
+      "enabled": true,
+      "authentication": {
+        "method": "PAT",
+        "keyVaultSecretRef": "kv://databricks-pat"
+      },
+      "properties": {
+        "workspaceUrl": "https://adb-1234.azuredatabricks.net",
+        "warehouseId": "abcdef1234567890",
+        "catalog": "main",
+        "schema": "sales",
+        "table": "account",
+        "keyColumn": "accountid"
+      }
+    }
+  ]
+}

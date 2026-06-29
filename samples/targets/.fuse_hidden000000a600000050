@@ -1,0 +1,13 @@
+{
+  "targetType": "EventHubs",
+  "name": "eventhubs",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "namespace": "my-eventhubs-ns",
+    "eventHub": "datagen-events",
+    "partitionKeyField": "accountId"
+  }
+}

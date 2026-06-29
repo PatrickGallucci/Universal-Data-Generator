@@ -1,0 +1,14 @@
+{
+  "targetType": "AzureAISearchIndex",
+  "name": "azureaisearchindex",
+  "enabled": true,
+  "authentication": {
+    "method": "ApiKey",
+    "keyVaultSecretRef": "kv://search-admin-key"
+  },
+  "properties": {
+    "endpoint": "https://mysearch.search.windows.net",
+    "indexName": "accounts",
+    "keyField": "id"
+  }
+}

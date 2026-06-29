@@ -1,0 +1,11 @@
+{
+  "targetType": "JsonFile",
+  "name": "jsonfile",
+  "enabled": true,
+  "authentication": {
+    "method": "None"
+  },
+  "properties": {
+    "directory": "./out"
+  }
+}

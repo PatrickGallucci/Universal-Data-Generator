@@ -1,0 +1,13 @@
+# Architecture Decision Records
+
+Each record captures one substantive decision: its context, the decision, the consequences, and the
+alternatives considered. Add a new record when a change makes a design decision worth remembering.
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [0001](./adr-0001-single-net10-target.md) | Single net10 target | Accepted |
+| [0002](./adr-0002-boost-symmetric-window.md) | Symmetric boost window | Accepted |
+| [0003](./adr-0003-boost-overlap-strongest-wins.md) | Boost overlap is strongest-wins | Accepted |
+| [0004](./adr-0004-batch-size-scaling.md) | Day-part and boost scale batch size | Accepted |
+| [0005](./adr-0005-foundry-value-generation.md) | Foundry produces semantic values | Accepted |
+| [0006](./adr-0006-ilogger-application-insights.md) | ILogger with Application Insights | Accepted |

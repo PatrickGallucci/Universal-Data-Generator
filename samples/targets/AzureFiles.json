@@ -1,0 +1,13 @@
+{
+  "targetType": "AzureFiles",
+  "name": "azurefiles",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "accountName": "myfiles",
+    "shareName": "datagen",
+    "directory": "raw"
+  }
+}

@@ -1,0 +1,638 @@
+[
+  {
+    "name": "Advertising",
+    "description": null
+  },
+  {
+    "name": "Aerospace & Defense",
+    "description": null
+  },
+  {
+    "name": "Agricultural & Farm Machinery",
+    "description": null
+  },
+  {
+    "name": "Agricultural Products & Services",
+    "description": null
+  },
+  {
+    "name": "Air Freight & Logistics",
+    "description": null
+  },
+  {
+    "name": "Airport Services",
+    "description": null
+  },
+  {
+    "name": "Alternative Carriers",
+    "description": null
+  },
+  {
+    "name": "Aluminum",
+    "description": null
+  },
+  {
+    "name": "Apparel Retail",
+    "description": null
+  },
+  {
+    "name": "Apparel, Accessories & Luxury Goods",
+    "description": null
+  },
+  {
+    "name": "Application Software",
+    "description": null
+  },
+  {
+    "name": "Asset Management & Custody Banks",
+    "description": null
+  },
+  {
+    "name": "Automobile Manufacturers",
+    "description": null
+  },
+  {
+    "name": "Automotive Parts & Equipment",
+    "description": null
+  },
+  {
+    "name": "Automotive Retail",
+    "description": null
+  },
+  {
+    "name": "Biotechnology",
+    "description": null
+  },
+  {
+    "name": "Brewers",
+    "description": null
+  },
+  {
+    "name": "Broadcasting",
+    "description": null
+  },
+  {
+    "name": "Broadline Retail",
+    "description": null
+  },
+  {
+    "name": "Building Products",
+    "description": null
+  },
+  {
+    "name": "Cable & Satellite",
+    "description": null
+  },
+  {
+    "name": "Cargo Ground Transportation",
+    "description": null
+  },
+  {
+    "name": "Casinos & Gaming",
+    "description": null
+  },
+  {
+    "name": "Coal & Consumable Fuels",
+    "description": null
+  },
+  {
+    "name": "Commercial & Residential Mortgage Finance",
+    "description": null
+  },
+  {
+    "name": "Commercial Printing",
+    "description": null
+  },
+  {
+    "name": "Commodity Chemicals",
+    "description": null
+  },
+  {
+    "name": "Communications Equipment",
+    "description": null
+  },
+  {
+    "name": "Computer & Electronics Retail",
+    "description": null
+  },
+  {
+    "name": "Construction & Engineering",
+    "description": null
+  },
+  {
+    "name": "Construction Machinery & Heavy Transportation Equipment",
+    "description": null
+  },
+  {
+    "name": "Construction Materials",
+    "description": null
+  },
+  {
+    "name": "Consumer Electronics",
+    "description": null
+  },
+  {
+    "name": "Consumer Finance",
+    "description": null
+  },
+  {
+    "name": "Consumer Staples Merchandise Retail",
+    "description": null
+  },
+  {
+    "name": "Copper",
+    "description": null
+  },
+  {
+    "name": "Data Center",
+    "description": null
+  },
+  {
+    "name": "Data Processing & Outsourced Services",
+    "description": null
+  },
+  {
+    "name": "Distillers & Vintners",
+    "description": null
+  },
+  {
+    "name": "Distributors",
+    "description": null
+  },
+  {
+    "name": "Diversified Banks",
+    "description": null
+  },
+  {
+    "name": "Diversified Capital Markets",
+    "description": null
+  },
+  {
+    "name": "Diversified Chemicals",
+    "description": null
+  },
+  {
+    "name": "Diversified Financial Services",
+    "description": null
+  },
+  {
+    "name": "Diversified Metals & Mining",
+    "description": null
+  },
+  {
+    "name": "Diversified Real Estate Activities",
+    "description": null
+  },
+  {
+    "name": "Diversified Support Services",
+    "description": null
+  },
+  {
+    "name": "Drug Retail",
+    "description": null
+  },
+  {
+    "name": "Education Services",
+    "description": null
+  },
+  {
+    "name": "Electric Utilities",
+    "description": null
+  },
+  {
+    "name": "Electrical Components & Equipment",
+    "description": null
+  },
+  {
+    "name": "Electronic Components",
+    "description": null
+  },
+  {
+    "name": "Electronic Equipment & Instruments",
+    "description": null
+  },
+  {
+    "name": "Electronic Manufacturing Services",
+    "description": null
+  },
+  {
+    "name": "Environmental & Facilities Services",
+    "description": null
+  },
+  {
+    "name": "Fertilizers & Agricultural Chemicals",
+    "description": null
+  },
+  {
+    "name": "Financial Exchanges & Data",
+    "description": null
+  },
+  {
+    "name": "Food Distributors",
+    "description": null
+  },
+  {
+    "name": "Food Retail",
+    "description": null
+  },
+  {
+    "name": "Footwear",
+    "description": null
+  },
+  {
+    "name": "Forest Products",
+    "description": null
+  },
+  {
+    "name": "Gas Utilities",
+    "description": null
+  },
+  {
+    "name": "Gold",
+    "description": null
+  },
+  {
+    "name": "Health Care Distributors",
+    "description": null
+  },
+  {
+    "name": "Health Care Equipment",
+    "description": null
+  },
+  {
+    "name": "Health Care Facilities",
+    "description": null
+  },
+  {
+    "name": "Health Care REITs",
+    "description": null
+  },
+  {
+    "name": "Health Care Services",
+    "description": null
+  },
+  {
+    "name": "Health Care Supplies",
+    "description": null
+  },
+  {
+    "name": "Health Care Technology",
+    "description": null
+  },
+  {
+    "name": "Heavy Electrical Equipment",
+    "description": null
+  },
+  {
+    "name": "Highways & Railtracks",
+    "description": null
+  },
+  {
+    "name": "Home Furnishings",
+    "description": null
+  },
+  {
+    "name": "Home Improvement Retail",
+    "description": null
+  },
+  {
+    "name": "Homebuilding",
+    "description": null
+  },
+  {
+    "name": "Homefurnishing Retail",
+    "description": null
+  },
+  {
+    "name": "Hotel & Resort",
+    "description": null
+  },
+  {
+    "name": "Hotels, Resorts & Cruise Lines",
+    "description": null
+  },
+  {
+    "name": "Household Appliances",
+    "description": null
+  },
+  {
+    "name": "Household Products",
+    "description": null
+  },
+  {
+    "name": "Housewares & Specialties",
+    "description": null
+  },
+  {
+    "name": "Human Resource & Employment Services",
+    "description": null
+  },
+  {
+    "name": "Independent Power Producers & Energy Traders",
+    "description": null
+  },
+  {
+    "name": "Industrial Conglomerates",
+    "description": null
+  },
+  {
+    "name": "Industrial Gases",
+    "description": null
+  },
+  {
+    "name": "Industrial Machinery & Supplies & Components",
+    "description": null
+  },
+  {
+    "name": "Insurance Brokers",
+    "description": null
+  },
+  {
+    "name": "Integrated Oil & Gas",
+    "description": null
+  },
+  {
+    "name": "Integrated Telecommunication Services",
+    "description": null
+  },
+  {
+    "name": "Interactive Home Entertainment",
+    "description": null
+  },
+  {
+    "name": "Interactive Media & Services",
+    "description": null
+  },
+  {
+    "name": "Internet Services & Infrastructure",
+    "description": null
+  },
+  {
+    "name": "Investment Banking & Brokerage",
+    "description": null
+  },
+  {
+    "name": "IT Consulting & Other Services",
+    "description": null
+  },
+  {
+    "name": "Leisure Facilities",
+    "description": null
+  },
+  {
+    "name": "Leisure Products",
+    "description": null
+  },
+  {
+    "name": "Life & Health Insurance",
+    "description": null
+  },
+  {
+    "name": "Life Sciences Tools & Services",
+    "description": null
+  },
+  {
+    "name": "Managed Health Care",
+    "description": null
+  },
+  {
+    "name": "Marine Ports & Services",
+    "description": null
+  },
+  {
+    "name": "Marine Transportation",
+    "description": null
+  },
+  {
+    "name": "Metal, Glass & Plastic Containers",
+    "description": null
+  },
+  {
+    "name": "Mortgage",
+    "description": null
+  },
+  {
+    "name": "Motorcycle Manufacturers",
+    "description": null
+  },
+  {
+    "name": "Movies & Entertainment",
+    "description": null
+  },
+  {
+    "name": "Multi-Family Residential",
+    "description": null
+  },
+  {
+    "name": "Multi-line Insurance",
+    "description": null
+  },
+  {
+    "name": "Multi-Sector Holdings",
+    "description": null
+  },
+  {
+    "name": "Multi-Utilities",
+    "description": null
+  },
+  {
+    "name": "Office Services & Supplies",
+    "description": null
+  },
+  {
+    "name": "Oil & Gas Drilling",
+    "description": null
+  },
+  {
+    "name": "Oil & Gas Equipment & Services",
+    "description": null
+  },
+  {
+    "name": "Oil & Gas Exploration & Production",
+    "description": null
+  },
+  {
+    "name": "Oil & Gas Refining & Marketing",
+    "description": null
+  },
+  {
+    "name": "Oil & Gas Storage & Transportation",
+    "description": null
+  },
+  {
+    "name": "Other Specialty Retail",
+    "description": null
+  },
+  {
+    "name": "Packaged Foods & Meats",
+    "description": null
+  },
+  {
+    "name": "Paper & Plastic Packaging Products & Materials",
+    "description": null
+  },
+  {
+    "name": "Paper Products",
+    "description": null
+  },
+  {
+    "name": "Passenger Airlines",
+    "description": null
+  },
+  {
+    "name": "Passenger Ground Transportation",
+    "description": null
+  },
+  {
+    "name": "Personal Care Products",
+    "description": null
+  },
+  {
+    "name": "Pharmaceuticals",
+    "description": null
+  },
+  {
+    "name": "Precious Metals & Minerals",
+    "description": null
+  },
+  {
+    "name": "Property & Casualty Insurance",
+    "description": null
+  },
+  {
+    "name": "Publishing",
+    "description": null
+  },
+  {
+    "name": "Rail Transportation",
+    "description": null
+  },
+  {
+    "name": "Real Estate Development",
+    "description": null
+  },
+  {
+    "name": "Real Estate Operating Companies",
+    "description": null
+  },
+  {
+    "name": "Real Estate Services",
+    "description": null
+  },
+  {
+    "name": "Regional Banks",
+    "description": null
+  },
+  {
+    "name": "Reinsurance",
+    "description": null
+  },
+  {
+    "name": "Renewable Electricity",
+    "description": null
+  },
+  {
+    "name": "Research & Consulting Services",
+    "description": null
+  },
+  {
+    "name": "Restaurants",
+    "description": null
+  },
+  {
+    "name": "Retail",
+    "description": null
+  },
+  {
+    "name": "Security & Alarm Services",
+    "description": null
+  },
+  {
+    "name": "Self-Storage",
+    "description": null
+  },
+  {
+    "name": "Semiconductor Materials & Equipment",
+    "description": null
+  },
+  {
+    "name": "Semiconductors",
+    "description": null
+  },
+  {
+    "name": "Silver",
+    "description": null
+  },
+  {
+    "name": "Single-Family Residential",
+    "description": null
+  },
+  {
+    "name": "Soft Drinks & Non-alcoholic Beverages",
+    "description": null
+  },
+  {
+    "name": "Specialized Consumer Services",
+    "description": null
+  },
+  {
+    "name": "Specialized Finance",
+    "description": null
+  },
+  {
+    "name": "Specialty Chemicals",
+    "description": null
+  },
+  {
+    "name": "Steel",
+    "description": null
+  },
+  {
+    "name": "Systems Software",
+    "description": null
+  },
+  {
+    "name": "Technology Distributors",
+    "description": null
+  },
+  {
+    "name": "Technology Hardware, Storage & Peripherals",
+    "description": null
+  },
+  {
+    "name": "Telecom Tower",
+    "description": null
+  },
+  {
+    "name": "Textiles",
+    "description": null
+  },
+  {
+    "name": "Timber",
+    "description": null
+  },
+  {
+    "name": "Tires & Rubber",
+    "description": null
+  },
+  {
+    "name": "Tobacco",
+    "description": null
+  },
+  {
+    "name": "Trading Companies & Distributors",
+    "description": null
+  },
+  {
+    "name": "Transaction & Payment Processing Services",
+    "description": null
+  },
+  {
+    "name": "Water Utilities",
+    "description": null
+  },
+  {
+    "name": "Wireless Telecommunication Services",
+    "description": null
+  }
+]

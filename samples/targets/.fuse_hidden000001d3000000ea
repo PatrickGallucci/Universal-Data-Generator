@@ -1,0 +1,9 @@
+{
+  "targetType": "Console",
+  "name": "console",
+  "enabled": true,
+  "authentication": {
+    "method": "None"
+  },
+  "properties": {}
+}

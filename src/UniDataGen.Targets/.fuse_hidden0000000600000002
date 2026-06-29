@@ -1,0 +1,102 @@
+using System.Text;
+using System.Text.Json;
+using DataGen.Abstractions;
+
+namespace DataGen.Targets;
+
+/// <summary>
+/// Writes each batch as newline-delimited JSON to a directory, one file per entity per batch. The record
+/// envelope carries the action so downstream readers can apply New, Update, and Delete as change events.
+/// This is the dependency-free reference sink and lets the whole pipeline run offline.
+/// </summary>
+public sealed class JsonFileSink : ISink
+{
+    private static readonly JsonSerializerOptions Json = new() { WriteIndented = false };
+    private readonly string _directory;
+
+    public JsonFileSink(TargetConfig config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        _directory = PropertyBag.GetString(config.Properties, "directory") ?? "./out";
+        TargetType = config.TargetType;
+    }
+
+    public SinkKind Kind => SinkKind.Batch;
+
+    public string TargetType { get; }
+
+    public Task OpenAsync(CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(_directory);
+        return Task.CompletedTask;
+    }
+
+    public async Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        string file = Path.Combine(_directory, $"{batch.EntityName}-{batch.GeneratedAt:yyyyMMddHHmmssfff}.ndjson");
+        var sb = new StringBuilder();
+        foreach (GeneratedRecord record in batch.Records)
+        {
+            var envelope = new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["_action"] = record.Action.ToString(),
+                ["_key"] = record.Key.ToString(),
+                ["_generatedAt"] = batch.GeneratedAt
+            };
+
+            foreach (KeyValuePair<string, object?> field in record.Fields)
+            {
+                envelope[field.Key] = field.Value;
+            }
+
+            sb.AppendLine(JsonSerializer.Serialize(envelope, Json));
+        }
+
+        await File.AppendAllTextAsync(file, sb.ToString(), cancellationToken).ConfigureAwait(false);
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+/// <summary>Placeholder to keep the file compiling if referenced; not used.</summary>
+public readonly struct ValueAsync_Stub;
+
+/// <summary>Writes a one-line summary of each batch to the console. Useful for smoke tests.</summary>
+public sealed class ConsoleSink : ISink
+{
+    public ConsoleSink(TargetConfig config) => TargetType = config.TargetType;
+
+    public SinkKind Kind => SinkKind.Streaming;
+
+    public string TargetType { get; }
+
+    public Task OpenAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken)
+    {
+        int news = batch.Records.Count(r => r.Action == RecordAction.New);
+        int updates = batch.Records.Count(r => r.Action == RecordAction.Update);
+        int deletes = batch.Records.Count(r => r.Action == RecordAction.Delete);
+        Console.WriteLine($"[{batch.GeneratedAt:O}] {batch.Key}: {news} new, {updates} update, {deletes} delete");
+        return Task.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+/// <summary>Discards all writes. Useful for load testing the engine without a real target.</summary>
+public sealed class NullSink : ISink
+{
+    public NullSink(TargetConfig config) => TargetType = config.TargetType;
+
+    public SinkKind Kind => SinkKind.Batch;
+
+    public string TargetType { get; }
+
+    public Task OpenAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}

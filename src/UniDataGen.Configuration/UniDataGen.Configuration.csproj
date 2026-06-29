@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>UniDataGen.Configuration</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
+    <ProjectReference Include="..\UniDataGen.Abstractions\UniDataGen.Abstractions.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\locales.json" />
+    <EmbeddedResource Include="Resources\languages.json" />
+    <EmbeddedResource Include="Resources\industries.json" />
+    <EmbeddedResource Include="Resources\source-types.json" />
+    <EmbeddedResource Include="Resources\storage.json" />
+    <EmbeddedResource Include="Resources\entities.json" />
+    <EmbeddedResource Include="Resources\attributes.json.gz" />
+  </ItemGroup>
+</Project>

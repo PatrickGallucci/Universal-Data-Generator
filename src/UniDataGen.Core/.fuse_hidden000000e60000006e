@@ -1,0 +1,70 @@
+using UniDataGen.Abstractions;
+
+namespace UniDataGen.Core;
+
+/// <summary>
+/// Computes the boost multiplier for a calendar day. Percentages apply as factor = 1 + percent / 100.
+/// The window is symmetric: the before window is the DaysBefore days ending the day before the peak,
+/// the after window is the DaysAfter days starting the day after the peak, and the peak day stands alone.
+/// The shoulder ramps from a sign-matched 1 percent up to the full shoulder magnitude and back.
+/// Overlap across multiple boosts is strongest-wins by absolute deviation from baseline.
+/// </summary>
+public static class BoostCalculator
+{
+    /// <summary>The percent applied on a given day by a single boost. Returns 0 when the day is outside the window.</summary>
+    public static double PercentOn(BoostDate boost, DateOnly day)
+    {
+        if (day == boost.Date)
+        {
+            return boost.BoostPercentOnDate;
+        }
+
+        // Shoulder start has the sign of the shoulder magnitude so a negative boost sags rather than spikes.
+        double shoulderStart = Math.Sign(boost.BoostPercent) * 1.0;
+
+        if (boost.DaysBefore > 0)
+        {
+            DateOnly start = boost.Date.AddDays(-boost.DaysBefore);
+            if (day >= start && day < boost.Date)
+            {
+                int n = boost.DaysBefore;
+                int i = day.DayNumber - start.DayNumber; // 0 .. n-1
+                double fraction = n == 1 ? 1.0 : (double)i / (n - 1);
+                return Lerp(shoulderStart, boost.BoostPercent, fraction);
+            }
+        }
+
+        if (boost.DaysAfter > 0)
+        {
+            DateOnly firstAfter = boost.Date.AddDays(1);
+            DateOnly end = boost.Date.AddDays(boost.DaysAfter);
+            if (day >= firstAfter && day <= end)
+            {
+                int n = boost.DaysAfter;
+                int i = day.DayNumber - firstAfter.DayNumber; // 0 .. n-1
+                double fraction = n == 1 ? 1.0 : (double)i / (n - 1);
+                return Lerp(boost.BoostPercent, shoulderStart, fraction);
+            }
+        }
+
+        return 0.0;
+    }
+
+    /// <summary>The combined multiplier for a day across all boosts, strongest-wins by absolute deviation.</summary>
+    public static double FactorOn(IEnumerable<BoostDate> boosts, DateOnly day)
+    {
+        double strongest = 0.0;
+        foreach (BoostDate boost in boosts)
+        {
+            double percent = PercentOn(boost, day);
+            if (Math.Abs(percent) > Math.Abs(strongest))
+            {
+                strongest = percent;
+            }
+        }
+
+        return 1.0 + strongest / 100.0;
+    }
+
+    private static double Lerp(double a, double b, double t) => a + (b - a) * t;
+}

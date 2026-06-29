@@ -1,0 +1,69 @@
+# API: UniDataGen.Abstractions
+
+The model and interfaces shared by every project. No dependencies.
+
+## Enumerations
+
+| Type | Values |
+|------|--------|
+| `GenerationMode` | `RealTime`, `Batch` |
+| `ScheduleSplit` | `WholeWeek`, `WeekdayWeekend` |
+| `DayPart` | `Night`, `Morning`, `Afternoon`, `Evening` |
+| `RecordAction` | `New`, `Update`, `Delete` |
+| `BatchUnit` | `Hour`, `Day`, `Week`, `Month` |
+| `SinkKind` | `Streaming`, `Batch` |
+
+## Catalog model
+
+| Type | Purpose |
+|------|---------|
+| `IndustryInfo` | An industry from the catalog. |
+| `SourceTypeInfo` | A source-system type. |
+| `StorageInfo` | A storage target name. |
+| `AttributeInfo` | One attribute: name, data type, purpose, nullability. |
+| `EntityInfo` | An entity and its resolved attributes. The `Key` is `schemaArea/EntityName`. |
+| `Catalog` | The whole catalog, with `FindEntity`, `HasIndustry`, and `HasSourceType`. |
+
+## Profile model
+
+| Type | Purpose |
+|------|---------|
+| `DayPartWeights` | Four multipliers, with `For(DayPart)` and a `Flat` default. |
+| `EntitySchedule` | The split and the weight sets. |
+| `ActionRates` | A New/Update/Delete triple, with `For(RecordAction)`. |
+| `RealtimeSettings` | Records per hour per action. |
+| `BatchFrequency`, `BatchSettings` | The cadence and records per batch. |
+| `BoostDate` | A boost: date, shoulder and peak percent, and the window. |
+| `EntityProfile` | The full per-entity profile. |
+| `FoundrySettings`, `RunHeader` | The run header. |
+| `TargetAuth`, `TargetConfig`, `RunConfiguration` | The targets and the whole configuration. |
+
+## Generated data
+
+| Type | Purpose |
+|------|---------|
+| `GeneratedRecord` | One record: action, key, and fields. |
+| `EntityBatch` | A set of records for one entity at one time. |
+
+## Interfaces
+
+```csharp
+public interface IValueProvider
+{
+    Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GenerateAsync(ValueRequest request, CancellationToken cancellationToken);
+}
+
+public interface ISink : IAsyncDisposable
+{
+    SinkKind Kind { get; }
+    string TargetType { get; }
+    Task OpenAsync(CancellationToken cancellationToken);
+    Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken);
+}
+
+public interface ISinkFactory
+{
+    bool CanCreate(string targetType);
+    ISink Create(TargetConfig config);
+}
+```

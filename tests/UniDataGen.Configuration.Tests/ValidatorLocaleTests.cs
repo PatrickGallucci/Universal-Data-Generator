@@ -1,0 +1,55 @@
+using UniDataGen.Abstractions;
+using UniDataGen.Configuration;
+using Xunit;
+
+namespace UniDataGen.Configuration.Tests;
+
+public class ValidatorLocaleTests
+{
+    private static Catalog BuildCatalog() => new(
+        [new IndustryInfo("Test", null)],
+        [new SourceTypeInfo("ECOM", "E-Commerce", null)],
+        [new StorageInfo("JsonFile", null)],
+        [new EntityInfo("core", "Account", "Account", null, null, [])]);
+
+    private static RunConfiguration BuildConfig(string runLocale, string? entityLocale) => new()
+    {
+        Run = new RunHeader("Test", "ECOM", new FoundrySettings("https://x", "gpt"), Locale: runLocale),
+        Entities =
+        [
+            new EntityProfile
+            {
+                SchemaArea = "core",
+                EntityName = "Account",
+                Mode = GenerationMode.Batch,
+                Schedule = new EntitySchedule(ScheduleSplit.WholeWeek, Week: DayPartWeights.Flat),
+                Batch = new BatchSettings(new BatchFrequency(1, BatchUnit.Day), new ActionRates(1, 0, 0)),
+                Locale = entityLocale
+            }
+        ],
+        Targets = [new TargetConfig { TargetType = "JsonFile", Name = "f", Enabled = true }]
+    };
+
+    [Fact]
+    public void Valid_locales_pass()
+    {
+        ValidationResult result = new RunConfigurationValidator().Validate(BuildConfig("es-MX", "fr-CA"), BuildCatalog());
+        Assert.True(result.IsValid, string.Join("; ", result.Errors));
+    }
+
+    [Fact]
+    public void Unsupported_run_locale_fails()
+    {
+        ValidationResult result = new RunConfigurationValidator().Validate(BuildConfig("xx-XX", null), BuildCatalog());
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("locale", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Unsupported_entity_locale_fails()
+    {
+        ValidationResult result = new RunConfigurationValidator().Validate(BuildConfig("en-US", "zz-ZZ"), BuildCatalog());
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.Contains("unsupported locale", StringComparison.OrdinalIgnoreCase));
+    }
+}

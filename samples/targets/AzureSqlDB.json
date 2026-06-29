@@ -1,0 +1,15 @@
+{
+  "targetType": "AzureSqlDB",
+  "name": "azuresqldb",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "server": "mysrv.database.windows.net",
+    "database": "sales",
+    "schema": "dbo",
+    "table": "Account",
+    "keyColumn": "accountId"
+  }
+}

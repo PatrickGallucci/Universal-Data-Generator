@@ -1,0 +1,33 @@
+using System.Text.Json;
+using DataGen.Configuration;
+
+// Regenerates the industries.json and entities.json reference lists from a catalog workbook, so the JSON
+// catalog stays in sync with the workbook. Run after editing the workbook's Industry or Attributes sheets,
+// then copy the output over src/DataGen.Configuration/Resources to rebuild the embedded catalog.
+//
+// Usage: DataGen.CatalogExporter <workbook.xlsx> [outputDirectory]
+if (args.Length < 1)
+{
+    Console.WriteLine("Usage: DataGen.CatalogExporter <workbook.xlsx> [outputDirectory]");
+    return 1;
+}
+
+string workbookPath = args[0];
+string outputDirectory = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
+Directory.CreateDirectory(outputDirectory);
+
+var options = new JsonSerializerOptions { WriteIndented = true };
+Catalog catalog = new WorkbookCatalogReader().Read(workbookPath);
+
+var industries = catalog.Industries
+    .Select(i => new { name = i.Name, description = i.Description })
+    .ToList();
+var entities = catalog.Entities
+    .Select(e => new { schemaArea = e.SchemaArea, entityName = e.EntityName, displayName = e.DisplayName })
+    .ToList();
+
+File.WriteAllText(Path.Combine(outputDirectory, "industries.json"), JsonSerializer.Serialize(industries, options));
+File.WriteAllText(Path.Combine(outputDirectory, "entities.json"), JsonSerializer.Serialize(entities, options));
+
+Console.WriteLine($"Wrote {industries.Count} industries and {entities.Count} entities to {outputDirectory}.");
+return 0;

@@ -1,0 +1,95 @@
+using System.Text.Json;
+
+namespace DataGen.ConfigEditor.AppData;
+
+/// <summary>
+/// Manages the editor's local JSON files under the user's local application data folder. Every list the editor
+/// uses (locales, source types, target templates) and the user's preferences live here as JSON, seeded on first
+/// run and read back on every start, so the application carries its own data.
+/// </summary>
+public sealed class AppDataStore
+{
+    private static readonly JsonSerializerOptions Json = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>The process-wide store instance.</summary>
+    public static AppDataStore Instance { get; } = new();
+
+    /// <summary>The local app data directory the editor reads and writes.</summary>
+    public string Directory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "DataGen.ConfigEditor");
+
+    public AppSettings Settings { get; private set; } = new();
+
+    public IReadOnlyList<LocaleEntry> Locales { get; private set; } = [];
+
+    public IReadOnlyList<string> SourceTypes { get; private set; } = [];
+
+    public IReadOnlyList<TargetTypeEntry> TargetTypes { get; private set; } = [];
+
+    public IReadOnlyList<IndustryItem> IndustryItems { get; private set; } = [];
+
+    public IReadOnlyList<EntityItem> EntityItems { get; private set; } = [];
+
+    public IReadOnlyList<string> Industries { get; private set; } = [];
+
+    public IReadOnlyList<string> EntityNames { get; private set; } = [];
+
+    public IReadOnlyList<string> SchemaAreas { get; private set; } = [];
+
+    /// <summary>Seeds any missing JSON files, then loads them. Safe to call once at startup.</summary>
+    public void Initialize()
+    {
+        System.IO.Directory.CreateDirectory(Directory);
+
+        Settings = LoadOrSeed("settings.json", () => new AppSettings());
+        Locales = LoadOrSeed("locales.json", SeedData.Locales);
+        SourceTypes = LoadOrSeed("source-types.json", SeedData.SourceTypes);
+        TargetTypes = LoadOrSeed("target-types.json", SeedData.TargetTypes);
+        IndustryItems = LoadOrSeed("industries.json", SeedData.Industries);
+        EntityItems = LoadOrSeed("entities.json", SeedData.Entities);
+
+        Industries = Distinct(IndustryItems.Select(i => i.Name));
+        EntityNames = Distinct(EntityItems.Select(e => e.EntityName));
+        SchemaAreas = Distinct(EntityItems.Select(e => e.SchemaArea));
+    }
+
+    private static IReadOnlyList<string> Distinct(IEnumerable<string> values)
+        => values.Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(v => v, StringComparer.OrdinalIgnoreCase).ToList();
+
+    /// <summary>Persists the current user preferences to settings.json.</summary>
+    public void SaveSettings() => Write("settings.json", Settings);
+
+    /// <summary>Returns the property template for a target type, or an empty list when unknown.</summary>
+    public IReadOnlyList<string> PropertiesFor(string targetType)
+        => TargetTypes.FirstOrDefault(t => string.Equals(t.TargetType, targetType, StringComparison.OrdinalIgnoreCase))?.Properties ?? [];
+
+    private T LoadOrSeed<T>(string fileName, Func<T> seed)
+    {
+        string path = Path.Combine(Directory, fileName);
+        if (!File.Exists(path))
+        {
+            T seeded = seed();
+            Write(fileName, seeded);
+            return seeded;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(File.ReadAllText(path), Json) ?? seed();
+        }
+        catch (JsonException)
+        {
+            // A corrupt file falls back to the seed rather than blocking startup.
+            return seed();
+        }
+    }
+
+    private void Write<T>(string fileName, T value)
+        => File.WriteAllText(Path.Combine(Directory, fileName), JsonSerializer.Serialize(value, Json));
+}

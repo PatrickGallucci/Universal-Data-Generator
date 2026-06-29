@@ -1,0 +1,13 @@
+{
+  "targetType": "ADLSGen2Parquet",
+  "name": "adlsgen2parquet",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "accountName": "mydatalake",
+    "filesystem": "curated",
+    "directory": "datagen"
+  }
+}

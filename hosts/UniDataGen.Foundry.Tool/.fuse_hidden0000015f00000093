@@ -1,0 +1,13 @@
+{
+  "name": "start_data_generation_run",
+  "description": "Start a synthetic data generation run from a run configuration file. The catalog is embedded.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "configPath": { "type": "string", "description": "Path to the run configuration JSON." },
+      "offline": { "type": "boolean", "description": "When true, generate without calling Foundry." },
+      "seconds": { "type": "integer", "description": "How long to run before stopping." }
+    },
+    "required": ["configPath"]
+  }
+}

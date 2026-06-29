@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- WinForms requires the Windows desktop framework; this host builds and runs on Windows only. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>DataGen.WinForms</AssemblyName>
+    <RootNamespace>DataGen.WinForms</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DataGen.Abstractions\DataGen.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\DataGen.Core\DataGen.Core.csproj" />
+    <ProjectReference Include="..\..\src\DataGen.Configuration\DataGen.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\DataGen.Targets\DataGen.Targets.csproj" />
+    <ProjectReference Include="..\..\src\DataGen.Generation.Foundry\DataGen.Generation.Foundry.csproj" />
+  </ItemGroup>
+</Project>

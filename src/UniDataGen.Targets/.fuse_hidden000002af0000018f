@@ -1,0 +1,92 @@
+using Azure.Identity;
+using Azure.Storage;
+using Azure.Storage.Files.DataLake;
+using DataGen.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace DataGen.Targets;
+
+/// <summary>
+/// Shared Azure Data Lake Storage Gen2 plumbing: builds the authenticated service client, ensures the
+/// filesystem exists, and uploads bytes to a path. Both the NDJSON and Parquet sinks use this so the
+/// authentication and container logic lives in one place.
+/// </summary>
+internal sealed class AdlsUploader
+{
+    private readonly string _accountName;
+    private readonly string _fileSystem;
+    private readonly TargetAuth _auth;
+    private readonly string? _accountKey;
+    private readonly ILogger _logger;
+    private DataLakeFileSystemClient? _fileSystemClient;
+
+    public AdlsUploader(string accountName, string fileSystem, TargetAuth auth, string? accountKey, ILogger? logger = null)
+    {
+        _accountName = accountName;
+        _fileSystem = fileSystem;
+        _auth = auth;
+        _accountKey = accountKey;
+        _logger = logger ?? NullLogger.Instance;
+    }
+
+    public async Task OpenAsync(CancellationToken cancellationToken)
+    {
+        DataLakeServiceClient service = CreateServiceClient();
+        _fileSystemClient = service.GetFileSystemClient(_fileSystem);
+        await _fileSystemClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("ADLS Gen2 ready: account {Account}, filesystem {FileSystem}.", _accountName, _fileSystem);
+    }
+
+    public async Task UploadAsync(string directory, string fileName, byte[] content, CancellationToken cancellationToken)
+    {
+        if (_fileSystemClient is null)
+        {
+            throw new InvalidOperationException($"{nameof(OpenAsync)} must be called before uploading.");
+        }
+
+        DataLakeDirectoryClient directoryClient = _fileSystemClient.GetDirectoryClient(directory);
+        await directoryClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        DataLakeFileClient fileClient = directoryClient.GetFileClient(fileName);
+        using var stream = new MemoryStream(content, writable: false);
+        await fileClient.UploadAsync(stream, overwrite: true, cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Uploaded {Bytes} bytes to {Path}.", content.Length, $"{directory}/{fileName}");
+    }
+
+    private DataLakeServiceClient CreateServiceClient()
+    {
+        var uri = new Uri($"https://{_accountName}.dfs.core.windows.net");
+
+        if (_auth.Method.Equals("StorageKey", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(_accountKey))
+        {
+            _logger.LogDebug("Authenticating to {Account} with a storage key.", _accountName);
+            return new DataLakeServiceClient(uri, new StorageSharedKeyCredential(_accountName, _accountKey));
+        }
+
+        _logger.LogDebug("Authenticating to {Account} with Microsoft Entra.", _accountName);
+        return new DataLakeServiceClient(uri, new DefaultAzureCredential());
+    }
+
+    public static string ResolveAccountName(IReadOnlyDictionary<string, object?> properties)
+    {
+        string? accountName = PropertyBag.GetString(properties, "accountName");
+        if (!string.IsNullOrWhiteSpace(accountName))
+        {
+            return accountName;
+        }
+
+        string? endpoint = PropertyBag.GetString(properties, "endpoint");
+        if (!string.IsNullOrWhiteSpace(endpoint) && Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? uri))
+        {
+            return uri.Host.Split('.')[0];
+        }
+
+        throw new InvalidOperationException("ADLS Gen2 target requires an 'accountName' or a parseable 'endpoint' property.");
+    }
+
+    public static string ResolveFileSystem(IReadOnlyDictionary<string, object?> properties)
+        => PropertyBag.GetString(properties, "filesystem")
+            ?? PropertyBag.GetString(properties, "container")
+            ?? throw new InvalidOperationException("ADLS Gen2 target requires a 'filesystem' (or 'container') property.");
+}

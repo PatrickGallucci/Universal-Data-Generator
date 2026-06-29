@@ -1,0 +1,111 @@
+using UniDataGen.Abstractions;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+namespace UniDataGen.Targets;
+
+/// <summary>
+/// Writes generated batches to an Azure Cosmos DB container. New and Update upsert by id; Delete removes by id and
+/// partition key. Each record becomes a document with an "id" plus change metadata. Authentication is Microsoft
+/// Entra by default, or an account key or connection string. The database and container must already exist.
+/// </summary>
+public sealed class CosmosDbSink : ISink
+{
+    private readonly TargetConfig _config;
+    private readonly string _database;
+    private readonly string _containerName;
+    private readonly string _partitionKeyField;
+    private readonly ILogger _logger;
+    private CosmosClient? _client;
+    private Container? _container;
+
+    public CosmosDbSink(TargetConfig config, ILogger? logger = null)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+        _config = config;
+        IReadOnlyDictionary<string, object?> p = config.Properties;
+        _database = PropertyBag.GetString(p, "database") ?? throw new InvalidOperationException("AzureCosmosDB target requires a 'database' property.");
+        _containerName = PropertyBag.GetString(p, "container") ?? throw new InvalidOperationException("AzureCosmosDB target requires a 'container' property.");
+        _partitionKeyField = (PropertyBag.GetString(p, "partitionKey") ?? "id").TrimStart('/');
+        _logger = logger ?? NullLogger.Instance;
+        TargetType = config.TargetType;
+    }
+
+    public SinkKind Kind => SinkKind.Batch;
+
+    public string TargetType { get; }
+
+    public Task OpenAsync(CancellationToken cancellationToken)
+    {
+        _client = CreateClient();
+        _container = _client.GetContainer(_database, _containerName);
+        _logger.LogInformation("Cosmos DB ready: database {Database}, container {Container}.", _database, _containerName);
+        return Task.CompletedTask;
+    }
+
+    public async Task WriteAsync(EntityBatch batch, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        if (_container is null)
+        {
+            throw new InvalidOperationException($"{nameof(OpenAsync)} must be called before {nameof(WriteAsync)}.");
+        }
+
+        if (batch.Records.Count == 0)
+        {
+            return;
+        }
+
+        int written = 0;
+        foreach (GeneratedRecord record in batch.Records)
+        {
+            Dictionary<string, object?> document = RecordDocument.ToDocument(record, batch.GeneratedAt);
+            string id = document["id"]!.ToString()!;
+            string partitionValue = document.TryGetValue(_partitionKeyField, out object? pk) && pk is not null ? pk.ToString()! : id;
+            var partitionKey = new PartitionKey(partitionValue);
+
+            if (record.Action == RecordAction.Delete)
+            {
+                try
+                {
+                    await _container.DeleteItemAsync<object>(id, partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    written++;
+                }
+                catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    // Already gone; nothing to do.
+                }
+            }
+            else
+            {
+                await _container.UpsertItemAsync(document, partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+                written++;
+            }
+        }
+
+        _logger.LogInformation("Applied {Count} documents to {Container}.", written, _containerName);
+    }
+
+    private CosmosClient CreateClient()
+    {
+        IReadOnlyDictionary<string, object?> p = _config.Properties;
+        if (PropertyBag.GetString(p, "connectionString") is { } cs)
+        {
+            return new CosmosClient(cs);
+        }
+
+        string endpoint = PropertyBag.GetString(p, "endpoint")
+            ?? $"https://{AdlsUploader.ResolveAccountName(p)}.documents.azure.com";
+        string? key = PropertyBag.GetString(p, "accountKey") ?? PropertyBag.GetString(p, "key");
+        return key is not null
+            ? new CosmosClient(endpoint, key)
+            : new CosmosClient(endpoint, new Azure.Identity.DefaultAzureCredential());
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _client?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

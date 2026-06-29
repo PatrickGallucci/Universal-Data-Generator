@@ -1,0 +1,31 @@
+namespace UniDataGen.Core;
+
+/// <summary>Resolves UTC instants to an entity's local wall-clock for day-part evaluation.</summary>
+public static class TimeZoneResolver
+{
+    /// <summary>
+    /// Converts a UTC instant to local time for the given time zone id, falling back to UTC when the id is
+    /// null or unknown. Accepts both Windows and IANA ids on net10 via the built-in conversion.
+    /// </summary>
+    public static DateTimeOffset ToLocal(DateTimeOffset utc, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return utc;
+        }
+
+        try
+        {
+            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            return TimeZoneInfo.ConvertTime(utc, tz);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return utc;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return utc;
+        }
+    }
+}

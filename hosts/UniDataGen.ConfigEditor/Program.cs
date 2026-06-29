@@ -1,0 +1,18 @@
+using UniDataGen.ConfigEditor.AppData;
+
+namespace UniDataGen.ConfigEditor;
+
+/// <summary>Entry point for the configuration editor.</summary>
+internal static class Program
+{
+    [STAThread]
+    private static void Main()
+    {
+        ApplicationConfiguration.Initialize();
+
+        // Seed and load the local JSON reference files before any UI binds to them.
+        AppDataStore.Instance.Initialize();
+
+        Application.Run(new MainForm());
+    }
+}

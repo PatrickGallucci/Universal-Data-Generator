@@ -1,0 +1,139 @@
+# Targets
+
+A target is a write destination. Every target implements one interface, `ISink`, and a DI-backed factory
+builds the right adapter from a target configuration. This page lists the targets, their properties, and
+their authentication, and explains how to register a custom sink.
+
+A configuration sample for every target is in [samples/targets/](../../samples/targets/).
+
+## Target list
+
+All workbook storage targets are implemented. New and Update apply by key where the target supports it;
+Delete removes by key or, for streaming targets, emits a tombstone event.
+
+| Target type | Kind | Write shape |
+|-------------|------|-------------|
+| `JsonFile` | Batch | Local newline-delimited JSON. Runs offline. |
+| `Console` | Streaming | One summary line per batch. |
+| `Null` | Batch | Discards writes. |
+| `ADLSGen2` | Batch | Partitioned NDJSON to Azure Data Lake Storage Gen2. |
+| `ADLSGen2Parquet` | Batch | Partitioned Apache Parquet to ADLS Gen2. |
+| `AzureBlobStorage` | Batch | Partitioned NDJSON to a blob container. |
+| `AzureFiles` | Batch | Partitioned NDJSON to a file share. |
+| `AzureDataShare` | Batch | NDJSON snapshot to the share's backing storage. |
+| `OneLakeLakehouse` | Batch | Parquet to a Fabric OneLake lakehouse Files area. |
+| `AzureSqlDB` | Batch | Insert, update by key, delete by key. |
+| `OneLakeWarehouse` | Batch | Insert, update, delete against the Fabric Warehouse T-SQL endpoint. |
+| `PostgreSQL` | Batch | Insert, update by key, delete by key. |
+| `AzureCosmosDB` | Batch | Upsert by id, delete by id and partition key. |
+| `AzureAISearchIndex` | Batch | Merge or upload, delete by key. |
+| `EventHubs` | Streaming | One event per record. |
+| `AzureServiceBus` | Streaming | One message per record. |
+| `AzureEventGrid` | Streaming | One event per record. |
+| `FabricEventhouse` | Streaming | Streaming ingestion of NDJSON into a Kusto table. |
+| `Dataverse` | Batch | Create, update by id, delete by id. |
+| `DatabricksUC` | Batch | Insert, update, delete via the SQL Statement Execution API. |
+
+## Change envelope
+
+Every record carries a change envelope so a consumer can apply New, Update, and Delete as change events.
+File and lake targets write these fields into each record; streaming targets carry them in the event body
+and properties; relational, document, and search targets carry the id and action as columns or fields.
+
+| Field | Description |
+|-------|-------------|
+| `_action` | `New`, `Update`, or `Delete`. |
+| `_key` or `id` | The record primary key. |
+| `_generatedAt` | The generation timestamp. |
+
+## Authentication
+
+The default for every Azure target is Microsoft Entra through `DefaultAzureCredential`: a managed identity
+in Azure, or your developer credential locally. Each target needs the matching role:
+
+| Target | Role or credential |
+|--------|--------------------|
+| ADLS Gen2, Blob, Files, Data Share, OneLake Lakehouse | Storage Blob Data Contributor (Files: Storage File Data SMB Share Contributor) |
+| Azure SQL, OneLake Warehouse | A database user mapped to the Entra principal |
+| PostgreSQL | An Entra database role (token used as password) |
+| Cosmos DB | Cosmos DB Built-in Data Contributor |
+| AI Search | Search Index Data Contributor, or an admin API key |
+| Event Hubs | Azure Event Hubs Data Sender |
+| Service Bus | Azure Service Bus Data Sender |
+| Event Grid | EventGrid Data Sender, or a topic access key |
+| Fabric Eventhouse | Ingestor on the database |
+| Dataverse | An application user or managed identity with table privileges |
+| Databricks UC | A personal access token with rights on the catalog |
+
+Most targets also accept a `connectionString` property to bypass Entra, and the storage targets accept an
+`accountKey` with `authentication.method` set to `StorageKey`.
+
+## Properties by family
+
+### Lake and storage
+
+`ADLSGen2`, `ADLSGen2Parquet`: `accountName` (or `endpoint`), `filesystem` (or `container`), `directory`.
+
+`AzureBlobStorage`: `accountName` (or `endpoint`), `container`, `path`.
+
+`AzureFiles`: `accountName`, `shareName`, `directory`. Entra uses the backup token intent.
+
+`AzureDataShare`: `accountName`, `container` (the share's backing storage), `datasetName`, `path`. Creating
+the share, dataset, and invitation is a management-plane setup step; this sink lands the snapshot data.
+
+`OneLakeLakehouse`: `workspace`, `lakehouse`, `path`. Writes Parquet under `{lakehouse}.Lakehouse/Files`.
+
+### Relational
+
+`AzureSqlDB`, `OneLakeWarehouse`, `PostgreSQL`: `server`, `database`, `schema`, `table`, and `keyColumn`.
+`keyColumn` names the primary key column and is required for Update and Delete; without it, only inserts run.
+A `username` and `password`, or a full `connectionString`, override Entra. The table must already exist with
+columns that match the generated fields.
+
+### Document and search
+
+`AzureCosmosDB`: `endpoint` (or `accountName`), `database`, `container`, `partitionKey`. The database and
+container must exist.
+
+`AzureAISearchIndex`: `endpoint`, `indexName`, `keyField`, and an optional `apiKey`. The index must exist.
+
+### Messaging and streaming
+
+`EventHubs`: `namespace`, `eventHub`, optional `partitionKeyField`.
+
+`AzureServiceBus`: `namespace`, `entityName` (queue or topic).
+
+`AzureEventGrid`: `endpoint`, optional `subjectPrefix`, optional access `key`.
+
+`FabricEventhouse`: `clusterUri`, `database`, `table`, optional `ingestionMapping`. Streaming ingestion must
+be enabled on the table or database.
+
+### Platform
+
+`Dataverse`: `environmentUrl`, `table`. Primitive fields map to columns with matching logical names; complex
+columns such as lookups and option sets are skipped.
+
+`DatabricksUC`: `workspaceUrl`, `warehouseId`, `catalog`, `schema`, `table`, `token`, and `keyColumn` for
+update and delete.
+
+## Registering a custom sink
+
+Targets are resolved from dependency injection. Register the built-ins with `AddDataGenTargets`, then add a
+custom sink with `AddSink`. The last registration for a target type wins, so you can override a built-in.
+
+```csharp
+services.AddDataGenTargets()
+        .AddSink("MyTarget", SinkKind.Batch, (config, logger) => new MySink(config, logger));
+
+// Resolve the factory and create a sink.
+ISinkFactory factory = provider.GetRequiredService<ISinkFactory>();
+ISink sink = factory.Create(targetConfig);
+```
+
+A custom sink implements `ISink`: a `Kind`, a `TargetType`, `OpenAsync`, `WriteAsync`, and `DisposeAsync`.
+See [API: Targets](../api/targets.md) for the registration types and
+[ADR-0007](../architecture/decisions/adr-0007-di-sink-registration.md) for the decision behind the model.
+
+Hosts that do not use a container construct `SinkFactory` directly, which uses the same built-in
+registrations. The Azure Functions host shows the DI path: it calls `AddDataGenTargets` and injects
+`ISinkFactory`.

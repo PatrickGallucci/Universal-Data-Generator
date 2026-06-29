@@ -1,0 +1,32 @@
+using UniDataGen.Configuration;
+using Xunit;
+
+namespace UniDataGen.Configuration.Tests;
+
+public class LocaleCatalogTests
+{
+    [Fact]
+    public void Catalog_loads_locales_and_languages()
+    {
+        Assert.True(LocaleCatalog.Locales.Count >= 69);
+        Assert.True(LocaleCatalog.Languages.Count >= 72);
+    }
+
+    [Theory]
+    [InlineData("en-US", true)]
+    [InlineData("es-MX", true)]
+    [InlineData("fr-CA", true)]
+    [InlineData("ar-SA", true)]
+    [InlineData("xx-XX", false)]
+    [InlineData("", false)]
+    public void IsSupported_matches_catalog(string locale, bool expected)
+        => Assert.Equal(expected, LocaleCatalog.IsSupported(locale));
+
+    [Fact]
+    public void Find_returns_country()
+        => Assert.Equal("Mexico", LocaleCatalog.Find("es-MX")!.Country);
+
+    [Fact]
+    public void Default_locale_is_en_us()
+        => Assert.Equal("en-US", LocaleCatalog.DefaultLocale);
+}

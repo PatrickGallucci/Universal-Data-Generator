@@ -1,0 +1,58 @@
+using System.Reflection;
+using System.Text.Json;
+
+namespace UniDataGen.Configuration;
+
+/// <summary>An industry the generator can select, sourced from the configuration's industries.json.</summary>
+public sealed record IndustryEntry(string Name, string? Description);
+
+/// <summary>An entity name the generator can select, sourced from the configuration's entities.json.</summary>
+public sealed record EntityNameEntry(string SchemaArea, string EntityName, string? DisplayName);
+
+/// <summary>
+/// The industry and entity reference lists, stored as JSON in the configuration so they can be edited without the
+/// workbook. The lists ship as embedded resources and are regenerated from a workbook by the catalog exporter.
+/// </summary>
+public static class ReferenceCatalog
+{
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private static readonly Lazy<IReadOnlyList<IndustryEntry>> IndustryList = new(LoadIndustries);
+    private static readonly Lazy<IReadOnlyList<EntityNameEntry>> EntityList = new(LoadEntities);
+
+    /// <summary>The supported industries.</summary>
+    public static IReadOnlyList<IndustryEntry> Industries => IndustryList.Value;
+
+    /// <summary>The supported entities.</summary>
+    public static IReadOnlyList<EntityNameEntry> Entities => EntityList.Value;
+
+    /// <summary>The distinct schema areas across the entities.</summary>
+    public static IReadOnlyList<string> SchemaAreas
+        => Entities.Select(e => e.SchemaArea).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(s => s).ToList();
+
+    /// <summary>True when an industry name is in the catalog (case-insensitive).</summary>
+    public static bool HasIndustry(string name)
+        => Industries.Any(i => string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>True when a schema area and entity name pair is in the catalog (case-insensitive).</summary>
+    public static bool HasEntity(string schemaArea, string entityName)
+        => Entities.Any(e => string.Equals(e.SchemaArea, schemaArea, StringComparison.OrdinalIgnoreCase)
+                          && string.Equals(e.EntityName, entityName, StringComparison.OrdinalIgnoreCase));
+
+    private static IReadOnlyList<IndustryEntry> LoadIndustries()
+        => JsonSerializer.Deserialize<List<IndustryEntry>>(ReadResource("industries.json"), JsonOptions) ?? [];
+
+    private static IReadOnlyList<EntityNameEntry> LoadEntities()
+        => JsonSerializer.Deserialize<List<EntityNameEntry>>(ReadResource("entities.json"), JsonOptions) ?? [];
+
+    private static string ReadResource(string fileName)
+    {
+        Assembly assembly = typeof(ReferenceCatalog).Assembly;
+        string resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(n => n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Embedded resource '{fileName}' not found.");
+
+        using Stream stream = assembly.GetManifestResourceStream(resourceName)!;
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "targetType": "AzureBlobStorage",
+  "name": "azureblobstorage",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "accountName": "myblobs",
+    "container": "datagen",
+    "path": "raw"
+  }
+}

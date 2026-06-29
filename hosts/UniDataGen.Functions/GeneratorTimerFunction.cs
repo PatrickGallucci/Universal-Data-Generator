@@ -1,0 +1,94 @@
+using UniDataGen.Abstractions;
+using UniDataGen.Configuration;
+using UniDataGen.Core;
+using UniDataGen.Generation.Foundry;
+using UniDataGen.Abstractions;
+using UniDataGen.Targets;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+
+namespace UniDataGen.Functions;
+
+/// <summary>
+/// Runs a bounded generation pass on a timer. The run-config path comes from app settings (DATAGEN_CONFIG).
+/// DATAGEN_OFFLINE=true skips Foundry. The catalog is embedded in the configuration. The injected logger factory routes
+/// every tier's logs to Application Insights. The pass runs for slightly less than the timer interval so
+/// invocations do not overlap.
+/// </summary>
+public sealed class GeneratorTimerFunction
+{
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ISinkFactory _sinkFactory;
+    private readonly ILogger<GeneratorTimerFunction> _logger;
+
+    public GeneratorTimerFunction(ILoggerFactory loggerFactory, ISinkFactory sinkFactory)
+    {
+        _loggerFactory = loggerFactory;
+        _sinkFactory = sinkFactory;
+        _logger = loggerFactory.CreateLogger<GeneratorTimerFunction>();
+    }
+
+    [Function("GeneratorTimer")]
+    public async Task Run([TimerTrigger("0 */5 * * * *")] TimerInfo timer, CancellationToken cancellationToken)
+    {
+        string? configPath = Environment.GetEnvironmentVariable("DATAGEN_CONFIG");
+        if (string.IsNullOrWhiteSpace(configPath))
+        {
+            _logger.LogWarning("DATAGEN_CONFIG must be set.");
+            return;
+        }
+
+        bool offline = string.Equals(Environment.GetEnvironmentVariable("DATAGEN_OFFLINE"), "true", StringComparison.OrdinalIgnoreCase);
+
+        Catalog catalog = CatalogStore.Load();
+        RunConfiguration config = new RunConfigurationLoader().LoadFromFile(configPath);
+
+        ValidationResult validation = new RunConfigurationValidator(_loggerFactory.CreateLogger<RunConfigurationValidator>()).Validate(config, catalog);
+        if (!validation.IsValid)
+        {
+            _logger.LogError("Invalid run configuration: {Errors}", string.Join("; ", validation.Errors));
+            return;
+        }
+
+        IValueProvider provider = offline
+            ? new TimerOfflineProvider()
+            : new FoundryValueProvider(config.Run.Foundry, logger: _loggerFactory.CreateLogger<FoundryValueProvider>());
+        var orchestrator = new GenerationOrchestrator(catalog, provider, _sinkFactory, _loggerFactory);
+
+        using var bounded = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        bounded.CancelAfter(TimeSpan.FromMinutes(4.5));
+
+        try
+        {
+            await orchestrator.RunAsync(config, TimeSpan.FromSeconds(2), bounded.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected at the end of the pass.
+        }
+        finally
+        {
+            (provider as IDisposable)?.Dispose();
+        }
+    }
+
+    private sealed class TimerOfflineProvider : IValueProvider
+    {
+        public Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GenerateAsync(ValueRequest request, CancellationToken cancellationToken)
+        {
+            var rows = new List<IReadOnlyDictionary<string, object?>>(request.Count);
+            for (int i = 0; i < request.Count; i++)
+            {
+                var row = new Dictionary<string, object?>(StringComparer.Ordinal);
+                foreach (AttributeInfo a in request.SemanticAttributes)
+                {
+                    row[a.Name] = $"{request.Industry}:{a.Name}:{i}";
+                }
+
+                rows.Add(row);
+            }
+
+            return Task.FromResult<IReadOnlyList<IReadOnlyDictionary<string, object?>>>(rows);
+        }
+    }
+}

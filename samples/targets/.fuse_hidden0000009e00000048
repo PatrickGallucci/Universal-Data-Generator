@@ -1,0 +1,14 @@
+{
+  "targetType": "AzureDataShare",
+  "name": "azuredatashare",
+  "enabled": true,
+  "authentication": {
+    "method": "ManagedIdentity"
+  },
+  "properties": {
+    "accountName": "mybackingstore",
+    "container": "shared",
+    "datasetName": "accounts",
+    "path": "datagen"
+  }
+}

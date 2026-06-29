@@ -1,0 +1,202 @@
+using UniDataGen.Abstractions;
+using Parquet;
+using Parquet.Data;
+using Parquet.Schema;
+
+namespace UniDataGen.Targets;
+
+/// <summary>
+/// Serializes an <see cref="EntityBatch"/> to Apache Parquet so it lands query-ready in OneLake and Fabric.
+/// The schema is inferred from the batch: three change-envelope columns (_action, _key, _generatedAt) plus one
+/// column per distinct field, typed from the values. Numeric and temporal types are preserved; anything mixed
+/// or unrecognized falls back to string. Timestamps are stored as UTC DateTime because Parquet.Net does not
+/// support DateTimeOffset. Writing is in-memory and has no I/O, so it is unit-testable.
+/// </summary>
+public static class ParquetBatchWriter
+{
+    private enum ColumnType
+    {
+        String,
+        Long,
+        Double,
+        Decimal,
+        Boolean,
+        Timestamp
+    }
+
+    /// <summary>Writes the batch to a Parquet byte array.</summary>
+    public static async Task<byte[]> WriteAsync(EntityBatch batch, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+
+        IReadOnlyList<string> fieldNames = CollectFieldNames(batch);
+        var columnTypes = new Dictionary<string, ColumnType>(StringComparer.Ordinal);
+        foreach (string name in fieldNames)
+        {
+            columnTypes[name] = InferType(batch, name);
+        }
+
+        var fields = new List<DataField>
+        {
+            new DataField<string>("_action"),
+            new DataField<string>("_key"),
+            new DataField<DateTime?>("_generatedAt")
+        };
+
+        foreach (string name in fieldNames)
+        {
+            fields.Add(CreateField(name, columnTypes[name]));
+        }
+
+        var schema = new ParquetSchema(fields.Cast<Field>().ToArray());
+
+        using var stream = new MemoryStream();
+        using (ParquetWriter writer = await ParquetWriter.CreateAsync(schema, stream, cancellationToken: cancellationToken).ConfigureAwait(false))
+        {
+            using ParquetRowGroupWriter rowGroup = writer.CreateRowGroup();
+
+            await rowGroup.WriteColumnAsync(new DataColumn(fields[0], batch.Records.Select(r => r.Action.ToString()).ToArray())).ConfigureAwait(false);
+            await rowGroup.WriteColumnAsync(new DataColumn(fields[1], batch.Records.Select(r => r.Key.ToString()).ToArray())).ConfigureAwait(false);
+            await rowGroup.WriteColumnAsync(new DataColumn(fields[2], batch.Records.Select(_ => (DateTime?)batch.GeneratedAt.UtcDateTime).ToArray())).ConfigureAwait(false);
+
+            for (int i = 0; i < fieldNames.Count; i++)
+            {
+                string name = fieldNames[i];
+                Array data = BuildColumn(batch, name, columnTypes[name]);
+                await rowGroup.WriteColumnAsync(new DataColumn(fields[i + 3], data)).ConfigureAwait(false);
+            }
+        }
+
+        return stream.ToArray();
+    }
+
+    private static IReadOnlyList<string> CollectFieldNames(EntityBatch batch)
+    {
+        var names = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (GeneratedRecord record in batch.Records)
+        {
+            foreach (string key in record.Fields.Keys)
+            {
+                if (seen.Add(key))
+                {
+                    names.Add(key);
+                }
+            }
+        }
+
+        return names;
+    }
+
+    private static ColumnType InferType(EntityBatch batch, string name)
+    {
+        ColumnType? agreed = null;
+        foreach (GeneratedRecord record in batch.Records)
+        {
+            if (!record.Fields.TryGetValue(name, out object? value) || value is null)
+            {
+                continue;
+            }
+
+            ColumnType category = Classify(value);
+            if (category == ColumnType.String)
+            {
+                return ColumnType.String;
+            }
+
+            if (agreed is null)
+            {
+                agreed = category;
+            }
+            else if (agreed != category)
+            {
+                return ColumnType.String; // mixed numeric/temporal categories collapse to string
+            }
+        }
+
+        return agreed ?? ColumnType.String;
+    }
+
+    private static ColumnType Classify(object value) => value switch
+    {
+        bool => ColumnType.Boolean,
+        sbyte or byte or short or ushort or int or uint or long or ulong => ColumnType.Long,
+        float or double => ColumnType.Double,
+        decimal => ColumnType.Decimal,
+        DateTime or DateTimeOffset => ColumnType.Timestamp,
+        _ => ColumnType.String
+    };
+
+    private static DataField CreateField(string name, ColumnType type) => type switch
+    {
+        ColumnType.Long => new DataField<long?>(name),
+        ColumnType.Double => new DataField<double?>(name),
+        ColumnType.Decimal => new DecimalDataField(name, precision: 38, scale: 18, isNullable: true),
+        ColumnType.Boolean => new DataField<bool?>(name),
+        ColumnType.Timestamp => new DataField<DateTime?>(name),
+        _ => new DataField<string>(name)
+    };
+
+    private static Array BuildColumn(EntityBatch batch, string name, ColumnType type)
+    {
+        int n = batch.Records.Count;
+        switch (type)
+        {
+            case ColumnType.Long:
+                var longs = new long?[n];
+                Fill(batch, name, (i, v) => longs[i] = ToLong(v));
+                return longs;
+            case ColumnType.Double:
+                var doubles = new double?[n];
+                Fill(batch, name, (i, v) => doubles[i] = ToDouble(v));
+                return doubles;
+            case ColumnType.Decimal:
+                var decimals = new decimal?[n];
+                Fill(batch, name, (i, v) => decimals[i] = ToDecimal(v));
+                return decimals;
+            case ColumnType.Boolean:
+                var bools = new bool?[n];
+                Fill(batch, name, (i, v) => bools[i] = ToBool(v));
+                return bools;
+            case ColumnType.Timestamp:
+                var times = new DateTime?[n];
+                Fill(batch, name, (i, v) => times[i] = ToTimestamp(v));
+                return times;
+            default:
+                var strings = new string?[n];
+                Fill(batch, name, (i, v) => strings[i] = v?.ToString());
+                return strings;
+        }
+    }
+
+    private static void Fill(EntityBatch batch, string name, Action<int, object?> set)
+    {
+        for (int i = 0; i < batch.Records.Count; i++)
+        {
+            batch.Records[i].Fields.TryGetValue(name, out object? value);
+            set(i, value);
+        }
+    }
+
+    private static long? ToLong(object? v) => v is null ? null : long.TryParse(v.ToString(), out long l) ? l : null;
+
+    private static double? ToDouble(object? v) => v is null ? null : double.TryParse(v.ToString(), out double d) ? d : null;
+
+    private static decimal? ToDecimal(object? v) => v is null ? null : decimal.TryParse(v.ToString(), out decimal d) ? d : null;
+
+    private static bool? ToBool(object? v) => v switch
+    {
+        null => null,
+        bool b => b,
+        _ => bool.TryParse(v.ToString(), out bool b) ? b : null
+    };
+
+    private static DateTime? ToTimestamp(object? v) => v switch
+    {
+        null => null,
+        DateTimeOffset dto => dto.UtcDateTime,
+        DateTime { Kind: DateTimeKind.Unspecified } dt => DateTime.SpecifyKind(dt, DateTimeKind.Utc),
+        DateTime dt => dt.ToUniversalTime(),
+        _ => DateTime.TryParse(v.ToString(), out DateTime parsed) ? parsed.ToUniversalTime() : null
+    };
+}

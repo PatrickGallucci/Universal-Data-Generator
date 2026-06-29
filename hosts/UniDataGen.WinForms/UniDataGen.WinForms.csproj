@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- WinForms requires the Windows desktop framework; this host builds and runs on Windows only. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>UniDataGen.WinForms</AssemblyName>
+    <RootNamespace>UniDataGen.WinForms</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\UniDataGen.Abstractions\UniDataGen.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\UniDataGen.Core\UniDataGen.Core.csproj" />
+    <ProjectReference Include="..\..\src\UniDataGen.Configuration\UniDataGen.Configuration.csproj" />
+    <ProjectReference Include="..\..\src\UniDataGen.Targets\UniDataGen.Targets.csproj" />
+    <ProjectReference Include="..\..\src\UniDataGen.Generation.Foundry\UniDataGen.Generation.Foundry.csproj" />
+    <ProjectReference Include="..\..\src\UniDataGen.Observability\UniDataGen.Observability.csproj" />
+  </ItemGroup>
+</Project>

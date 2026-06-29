@@ -1,0 +1,19 @@
+{
+  "targetType": "PostgreSQL",
+  "name": "postgresql",
+  "enabled": true,
+  "authentication": {
+    "method": "Password",
+    "keyVaultSecretRef": "kv://postgres-password"
+  },
+  "properties": {
+    "server": "mypg.postgres.database.azure.com",
+    "database": "sales",
+    "schema": "public",
+    "table": "account",
+    "keyColumn": "accountid",
+    "username": "datagen@mypg",
+    "port": "5432",
+    "sslMode": "Require"
+  }
+}

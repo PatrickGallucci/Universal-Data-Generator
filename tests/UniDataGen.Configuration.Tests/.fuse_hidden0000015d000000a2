@@ -1,0 +1,30 @@
+using UniDataGen.Configuration;
+using Xunit;
+
+namespace UniDataGen.Configuration.Tests;
+
+public class ReferenceCatalogTests
+{
+    [Fact]
+    public void Entities_load_from_embedded_json()
+    {
+        Assert.True(ReferenceCatalog.Entities.Count > 9000);
+        Assert.True(ReferenceCatalog.HasEntity("core", "Account"));
+        Assert.True(ReferenceCatalog.HasEntity("CORE", "account")); // case-insensitive
+        Assert.False(ReferenceCatalog.HasEntity("core", "NotAnEntity"));
+    }
+
+    [Fact]
+    public void Industries_load_from_embedded_json()
+    {
+        Assert.True(ReferenceCatalog.Industries.Count >= 159);
+        Assert.True(ReferenceCatalog.HasIndustry("Apparel Retail"));
+        Assert.True(ReferenceCatalog.HasIndustry("Semiconductors"));
+        Assert.True(ReferenceCatalog.HasIndustry("Wireless Telecommunication Services"));
+        Assert.False(ReferenceCatalog.HasIndustry("Nonexistent Industry"));
+    }
+
+    [Fact]
+    public void Schema_areas_are_distinct_and_include_core()
+        => Assert.Contains("core", ReferenceCatalog.SchemaAreas);
+}

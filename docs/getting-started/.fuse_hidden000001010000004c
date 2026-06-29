@@ -1,0 +1,44 @@
+# Quick start
+
+This guide generates data offline, with no Azure account. The run writes newline-delimited JSON
+to a local folder through the `JsonFile` sink, using placeholder values instead of calling Foundry.
+
+## Step 1: Build the solution
+
+```bash
+dotnet build DataGenerator.slnx
+```
+
+## Step 2: Review the sample run configuration
+
+[samples/run-config.sample.json](../../samples/run-config.sample.json) selects the `Apparel Retail`
+industry and the `ECOM` source type, a real-time `Account` entity, and a batch
+`RetailTransactionTable` entity. The `JsonFile` target is enabled and writes to `./out`. The cloud
+targets are present but disabled, so the sample runs with no credentials.
+
+## Step 3: Run the generator
+
+Use the PowerShell module with the `-Offline` switch:
+
+```powershell
+Import-Module ./hosts/DataGen.PowerShell/bin/Debug/net10.0/DataGen.PowerShell.dll
+Start-DataGenRun -ConfigPath ./samples/run-config.sample.json -Offline -Verbose
+```
+
+The run starts and writes batches every few seconds. Press Ctrl-C to stop.
+
+## Step 4: Inspect the output
+
+The `./out` folder fills with `.ndjson` files, one per entity per batch. Each line is one record
+with a change envelope:
+
+```json
+{"_action":"New","_key":"5f2b...","_generatedAt":"2026-06-28T14:03:00+00:00","name":"Apparel Retail:name:0"}
+```
+
+## Next steps
+
+- Point the run at Azure storage. See [Targets](../guides/targets.md).
+- Turn on real value generation. See [Hosts](../guides/hosts.md) and the Foundry settings in
+  [Run configuration](../guides/run-configuration.md).
+- Send logs to Application Insights. See [Logging](../guides/logging.md).

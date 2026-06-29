@@ -1,0 +1,29 @@
+# Testing
+
+The tests focus on the parts most likely to be wrong in a subtle way: the scheduling and boost math,
+and the serialization and factory wiring of the targets.
+
+## Test projects
+
+| Project | Covers |
+|---------|--------|
+| `UniDataGen.Core.Tests` | Boost math (both worked examples and the suppression case), day-part mapping, schedule selection, real-time accrual, batch cadence, and the value coordinator. |
+| `UniDataGen.Targets.Tests` | The NDJSON and Parquet writers, partition path building, and factory wiring for ADLS Gen2, Parquet, and Event Hubs. |
+
+## Run the tests
+
+```bash
+dotnet test tests/UniDataGen.Core.Tests
+dotnet test tests/UniDataGen.Targets.Tests
+```
+
+## Writing tests
+
+- Test the pure helpers directly. They have no I/O, so a test asserts an exact result for a given
+  input. The boost calculator and the batch planner are the clearest examples.
+- For code that calls a provider or a sink, substitute a fake. `UniDataGen.Core.Tests` uses a fake
+  `IValueProvider` that echoes the requested attributes.
+- Follow the existing naming and capitalization in nearby tests. Do not add Arrange, Act, or Assert
+  comments.
+- Do not assert against a live Azure service. The cloud sinks are tested through their pure logic and
+  their construction; the network call runs against a real account at run time.

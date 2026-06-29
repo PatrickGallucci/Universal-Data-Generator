@@ -1,0 +1,73 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Project documentation set under `docs/`, plus this changelog and a contributing guide.
+- Dependency-injected sink registration: `ISinkRegistration`, `DiSinkFactory`, `DefaultSinks`, and the
+  `AddDataGenTargets` and `AddSink` service-collection extensions. See
+  [ADR-0007](docs/architecture/decisions/adr-0007-di-sink-registration.md).
+- All remaining storage targets implemented as concrete sinks: Azure Blob Storage, Azure Files, Azure Data
+  Share, OneLake Lakehouse, Azure SQL Database, OneLake Warehouse, PostgreSQL, Azure Cosmos DB, Azure AI Search,
+  Azure Service Bus, Azure Event Grid, Fabric Eventhouse, Dataverse, and Databricks Unity Catalog.
+- A configuration sample per target under `samples/targets/`.
+- The Azure Functions host resolves `ISinkFactory` through dependency injection (`AddDataGenTargets`).
+- A configuration editor host, `DataGen.ConfigEditor`, a WinForms property-grid editor for the run
+  configuration that reads and writes run-config JSON and stores its reference lists and preferences in local
+  JSON files (locales, source types, target templates, settings).
+- Output localization for generated values: a run-level `locale` (default `en-US`) with a per-entity override,
+  a `LocaleCatalog` of supported locales and languages stored as embedded configuration resources, validation
+  of configured locales, the locale carried into the Foundry prompt, and locale selectors in the WinForms client.
+
+## [0.1.0] - 2026-06-28
+
+The first working version: the Core engine, the configuration layer, Foundry value
+generation, six concrete target adapters, four hosts, and Application Insights logging.
+
+### Added
+
+- **Core engine** (`DataGen.Core`): day-part calculator, schedule evaluator, boost-date
+  ramp calculator, real-time rate accumulator, batch planner, identity pool, value
+  coordinator, and the generation orchestrator.
+- **Abstractions** (`DataGen.Abstractions`): the run-configuration and catalog model,
+  the `IValueProvider`, `ISink`, and `ISinkFactory` interfaces, and the generated-data types.
+- **Configuration** (`DataGen.Configuration`): a streaming workbook catalog reader, the
+  run-config JSON loader, and a validator that checks a run against the catalog.
+- **Foundry value generation** (`DataGen.Generation.Foundry`): an `IValueProvider` that
+  calls an Azure AI Foundry chat deployment with structured outputs and coerces results to
+  CDM types.
+- **Target adapters** (`DataGen.Targets`): `JsonFileSink`, `ConsoleSink`, `NullSink`,
+  `AdlsGen2Sink` (NDJSON), `AdlsGen2ParquetSink` (Parquet), and `EventHubsSink`. The
+  remaining workbook storage targets resolve to a scaffolded stub that names the package
+  needed to finish each adapter.
+- **Hosts**: a PowerShell binary module, an Azure Functions isolated worker, a WinForms
+  desktop client, and an Azure AI Foundry agent tool.
+- **Logging** (`DataGen.Observability`): `ILogger` across every tier, routed to Azure
+  Application Insights, with a delegate provider so a host can mirror logs into its own UI.
+- **Tests**: `DataGen.Core.Tests` (42 tests) and `DataGen.Targets.Tests` (17 tests),
+  covering the boost math, scheduling, accrual, batch cadence, the value coordinator, the
+  NDJSON and Parquet writers, path building, and factory wiring.
+
+### Decisions
+
+- Single `net10.0` target across the solution. See
+  [ADR-0001](docs/architecture/decisions/adr-0001-single-net10-target.md).
+- Boost windows are symmetric with `daysBefore`. See
+  [ADR-0002](docs/architecture/decisions/adr-0002-boost-symmetric-window.md).
+- Boost overlap resolves strongest-wins. See
+  [ADR-0003](docs/architecture/decisions/adr-0003-boost-overlap-strongest-wins.md).
+- Day-part and boost scale batch size, not cadence. See
+  [ADR-0004](docs/architecture/decisions/adr-0004-batch-size-scaling.md).
+- Foundry produces semantic values; the engine stamps system fields. See
+  [ADR-0005](docs/architecture/decisions/adr-0005-foundry-value-generation.md).
+- Logging uses `ILogger` with Application Insights at the host boundary. See
+  [ADR-0006](docs/architecture/decisions/adr-0006-ilogger-application-insights.md).
+
+[Unreleased]: https://example.com/DataGenerator/compare/v0.1.0...HEAD
+[0.1.0]: https://example.com/DataGenerator/releases/tag/v0.1.0

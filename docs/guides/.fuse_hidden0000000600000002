@@ -1,0 +1,160 @@
+# Run configuration
+
+The run configuration is a JSON document that every host shares. It has three parts: the run
+header, the entity profiles, and the targets. This page is the field reference. For a complete
+example, see [samples/run-config.sample.json](../../samples/run-config.sample.json).
+
+## Top-level shape
+
+```json
+{
+  "run": { },
+  "entities": [ ],
+  "targets": [ ]
+}
+```
+
+## Run header
+
+```json
+{
+  "run": {
+    "industry": "Apparel Retail",
+    "sourceType": "ECOM",
+    "defaultTimeZoneId": "Eastern Standard Time",
+    "foundry": {
+      "endpoint": "https://my-foundry.services.ai.azure.com",
+      "deployment": "gpt-4.1",
+      "authMethod": "ManagedIdentity"
+    }
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `industry` | string | Yes | An industry name from the workbook `Industry` sheet. The loader validates it against the catalog. |
+| `sourceType` | string | Yes | A source-type code from the workbook `SourceType` sheet. |
+| `defaultTimeZoneId` | string | No | The time zone used to resolve day parts when an entity does not set its own. Defaults to UTC. |
+| `locale` | string | No | The default BCP-47 locale for generated values, for example `en-US`. Validated against the locale catalog. See [Localization](./localization.md). |
+| `foundry.endpoint` | string | Yes for live runs | The Azure AI Foundry endpoint. |
+| `foundry.deployment` | string | Yes for live runs | The model deployment name. |
+| `foundry.authMethod` | string | No | `ManagedIdentity` (default) or `ApiKey`. |
+
+## Entity profiles
+
+Each selected entity carries its own profile, because the mode is a per-entity setting. A run can
+mix a real-time entity with a batch entity.
+
+```json
+{
+  "schemaArea": "core",
+  "entityName": "Account",
+  "mode": "RealTime",
+  "schedule": {
+    "split": "WeekdayWeekend",
+    "weekday": { "morning": 1.0, "afternoon": 1.4, "evening": 0.8, "night": 0.1 },
+    "weekend": { "morning": 0.6, "afternoon": 0.9, "evening": 1.2, "night": 0.2 }
+  },
+  "realtime": { "perHour": { "new": 120, "update": 40, "delete": 5 } },
+  "boosts": [
+    { "date": "2026-08-15", "boostPercent": 25, "daysBefore": 14, "daysAfter": 6, "boostPercentOnDate": 50 }
+  ]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `schemaArea` | string | Yes | The entity schema area, for example `core`. |
+| `entityName` | string | Yes | The entity name from the catalog. |
+| `mode` | string | Yes | `RealTime` or `Batch`. |
+| `schedule` | object | Yes | The day-part weighting. See below. |
+| `realtime` | object | When `mode` is `RealTime` | Records per hour per action. |
+| `batch` | object | When `mode` is `Batch` | Cadence and records per batch per action. |
+| `boosts` | array | No | Boost dates. See below. |
+| `timeZoneId` | string | No | Overrides the run default time zone for this entity. |
+
+### Schedule
+
+`split` is either `WholeWeek`, which reads a single `week` weight set, or `WeekdayWeekend`, which
+reads `weekday` and `weekend` weight sets. Each set holds four multipliers on the base rate, where
+`1.0` means the base rate as configured.
+
+The day parts use wall-clock hours in the entity time zone:
+
+| Day part | Hours |
+|----------|-------|
+| Night | 00:00 to 06:00 |
+| Morning | 06:00 to 12:00 |
+| Afternoon | 12:00 to 18:00 |
+| Evening | 18:00 to 24:00 |
+
+### Real-time settings
+
+```json
+{ "realtime": { "perHour": { "new": 120, "update": 40, "delete": 5 } } }
+```
+
+The engine accrues fractional records against the per-hour rate, scaled by the day-part weight and
+any boost factor, and emits whole records as the accrual crosses one.
+
+### Batch settings
+
+```json
+{
+  "batch": {
+    "frequency": { "count": 4, "per": "Day" },
+    "perBatch": { "new": 5000, "update": 1500, "delete": 100 }
+  }
+}
+```
+
+`frequency.per` is `Hour`, `Day`, `Week`, or `Month`. A cadence of four per day fires every six
+hours. The day-part weight and boost factor scale the size of the batch at its fire time, not the
+number of batches.
+
+### Boosts
+
+A boost date bends volume around a calendar event. The percentages apply as a multiplier:
+`factor = 1 + percent / 100`. The window is symmetric with the peak day excluded from both shoulders.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `date` | string (date) | The peak day, `yyyy-MM-dd`. |
+| `boostPercent` | number | The shoulder magnitude. The ramp runs from a sign-matched 1 percent up to this value. |
+| `daysBefore` | integer | Ramp-up days before the peak. |
+| `daysAfter` | integer | Ramp-down days after the peak. |
+| `boostPercentOnDate` | number | The peak-day magnitude. |
+
+> **Example**: `boostPercent 25, daysBefore 14, daysAfter 6, boostPercentOnDate 50` on `2026-08-15`
+> ramps up from 1 to 25 percent across 08-01 to 08-14, sits at 50 percent on 08-15, then ramps 25
+> percent back to 1 percent across 08-16 to 08-21. A negative `boostPercent` with a
+> `boostPercentOnDate` of `-100` suppresses generation to zero on the peak day.
+
+When two boost windows cover the same day, the engine takes the single boost with the largest
+absolute deviation from baseline. It does not sum or compound. See
+[ADR-0003](../architecture/decisions/adr-0003-boost-overlap-strongest-wins.md).
+
+## Targets
+
+Each target mirrors an entry in the data-targets schema.
+
+```json
+{
+  "targetType": "ADLSGen2",
+  "name": "adls-raw",
+  "enabled": true,
+  "authentication": { "method": "ManagedIdentity" },
+  "properties": { "accountName": "mydatalake", "filesystem": "raw", "directory": "datagen" }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `targetType` | string | The target type. See [Targets](./targets.md) for the list. |
+| `name` | string | A label for logs and diagnostics. |
+| `enabled` | boolean | When `false`, the target is skipped. |
+| `authentication.method` | string | `ManagedIdentity`, `StorageKey`, `None`, or a target-specific method. |
+| `properties` | object | Target-specific connection properties. |
+
+See [Targets](./targets.md) for the properties each target type reads.
