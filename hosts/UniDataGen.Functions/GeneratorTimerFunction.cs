@@ -2,7 +2,6 @@ using UniDataGen.Abstractions;
 using UniDataGen.Configuration;
 using UniDataGen.Core;
 using UniDataGen.Generation.Foundry;
-using UniDataGen.Abstractions;
 using UniDataGen.Targets;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;

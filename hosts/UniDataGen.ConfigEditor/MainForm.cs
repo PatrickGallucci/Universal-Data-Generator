@@ -56,7 +56,7 @@ public sealed class MainForm : Form
         edit.DropDownItems.Add(new ToolStripMenuItem("Add &target", null, (_, _) => AddTarget()));
 
         var tools = new ToolStripMenuItem("&Tools");
-        tools.DropDownItems.Add(new ToolStripMenuItem("&Validate", null, (_, _) => Validate()));
+        tools.DropDownItems.Add(new ToolStripMenuItem("&Validate", null, (_, _) => ValidateConfig()));
 
         var help = new ToolStripMenuItem("&Help");
         help.DropDownItems.Add(new ToolStripMenuItem("&About", null, (_, _) => ShowAbout()));
@@ -156,7 +156,7 @@ public sealed class MainForm : Form
         _grid.Refresh();
     }
 
-    private void Validate()
+    private void ValidateConfig()
     {
         var errors = new List<string>();
         if (string.IsNullOrWhiteSpace(_model.Run.Industry))
