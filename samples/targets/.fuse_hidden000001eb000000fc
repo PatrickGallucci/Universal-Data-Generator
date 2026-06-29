@@ -1,9 +1,0 @@
-{
-  "targetType": "Null",
-  "name": "null",
-  "enabled": true,
-  "authentication": {
-    "method": "None"
-  },
-  "properties": {}
-}
