@@ -6,3 +6,4 @@ out/
 _site/
 api/.manifest
 artifacts/
+.fuse_hidden*
