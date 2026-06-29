@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet build UniDataGen.slnx -c Release --nologo -p:EnableWindowsTargeting=true
+      - run: dotnet pack src/UniDataGen.Abstractions src/UniDataGen.Core src/UniDataGen.Configuration src/UniDataGen.Generation.Foundry src/UniDataGen.Targets src/UniDataGen.Observability -c Release -o artifacts --no-build
+      - name: Push to NuGet
+        if: ${{ secrets.NUGET_API_KEY != '' }}
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/*.nupkg

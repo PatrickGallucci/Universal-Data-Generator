@@ -1,16 +1,22 @@
 # Universal Data Generator
 
+[![CI](https://github.com/PatrickGallucci/Universal-Data-Generator/actions/workflows/ci.yml/badge.svg)](https://github.com/PatrickGallucci/Universal-Data-Generator/actions/workflows/ci.yml)
+[![Docs](https://github.com/PatrickGallucci/Universal-Data-Generator/actions/workflows/docs.yml/badge.svg)](https://patrickgallucci.github.io/Universal-Data-Generator/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/)
+
 Universal Data Generator is a JSON-configured synthetic data engine. One C# Core library does the work:
 it reads a catalog, computes how many records each entity owes at a given moment, fills values
-through Azure AI Foundry, and writes to a target. Four thin hosts call that Core: a PowerShell
-module, an Azure Functions worker, a WinForms client, and an Azure AI Foundry agent tool.
+through Azure AI Foundry, and writes to a target. Five thin hosts call that Core: a PowerShell
+module, an Azure Functions worker, a WinForms client, a configuration editor, and an Azure AI Foundry
+agent tool.
 
 The target framework is `net10.0` / C# 14. The WinForms host targets `net10.0-windows` and runs
 on Windows only.
 
 ## Features
 
-- One industry, one source type, and many entities per run, chosen from an Excel catalog.
+- One industry, one source type, and many entities per run, chosen from an embedded JSON catalog.
 - Per-entity real-time or batch generation, with weekday/weekend day-part weighting and boost dates.
 - Azure AI Foundry value generation shaped by the industry and the CDM attribute model.
 - Twenty target adapters covering every storage type in the catalog: local files, ADLS Gen2 (NDJSON and
@@ -66,7 +72,8 @@ On a non-Windows machine, add `-p:EnableWindowsTargeting=true` to compile the Wi
 
 ## Documentation
 
-The full documentation is in [docs/](docs/README.md). Highlights:
+The published site is at <https://patrickgallucci.github.io/Universal-Data-Generator/>. The source is in
+[docs/](docs/README.md). Highlights:
 
 - [Run configuration](docs/guides/run-configuration.md)
 - [Targets](docs/guides/targets.md)
@@ -76,4 +83,4 @@ The full documentation is in [docs/](docs/README.md). Highlights:
 
 ## License
 
-Internal project. Add a license before any external distribution.
+Released under the [MIT License](LICENSE).

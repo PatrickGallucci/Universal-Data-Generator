@@ -1,0 +1,56 @@
+- name: Overview
+  href: README.md
+- name: Getting started
+  items:
+    - name: Installation
+      href: getting-started/installation.md
+    - name: Configuration
+      href: getting-started/configuration.md
+    - name: Quick start
+      href: getting-started/quick-start.md
+- name: Guides
+  items:
+    - name: Run configuration
+      href: guides/run-configuration.md
+    - name: Targets
+      href: guides/targets.md
+    - name: Hosts
+      href: guides/hosts.md
+    - name: Logging
+      href: guides/logging.md
+    - name: Localization
+      href: guides/localization.md
+    - name: Configuration editor
+      href: guides/config-editor.md
+    - name: Deployment
+      href: guides/deployment.md
+    - name: Troubleshooting
+      href: guides/troubleshooting.md
+- name: Architecture
+  items:
+    - name: Overview
+      href: architecture/overview.md
+- name: API reference
+  items:
+    - name: Overview
+      href: api/overview.md
+    - name: Abstractions
+      href: api/abstractions.md
+    - name: Core
+      href: api/core.md
+    - name: Configuration
+      href: api/configuration.md
+    - name: Targets
+      href: api/targets.md
+    - name: Foundry
+      href: api/foundry.md
+    - name: Observability
+      href: api/observability.md
+- name: Contributing
+  items:
+    - name: Development
+      href: contributing/development.md
+    - name: Testing
+      href: contributing/testing.md
+    - name: Style guide
+      href: contributing/style-guide.md

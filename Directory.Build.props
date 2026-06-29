@@ -7,4 +7,24 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
+
+  <!-- Versioning and package metadata. Default to not packable; src libraries opt in. -->
+  <PropertyGroup>
+    <Version>0.2.0</Version>
+    <Authors>Patrick Gallucci</Authors>
+    <Company>Universal Data Generator</Company>
+    <Product>Universal Data Generator</Product>
+    <Copyright>Copyright (c) Patrick Gallucci</Copyright>
+    <PackageProjectUrl>https://patrickgallucci.github.io/Universal-Data-Generator/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/PatrickGallucci/Universal-Data-Generator</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>synthetic-data;data-generator;azure;foundry;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 </Project>

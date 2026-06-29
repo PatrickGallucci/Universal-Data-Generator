@@ -3,6 +3,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>UniDataGen.Targets</RootNamespace>
     <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
+    <IsPackable>true</IsPackable>
+    <Description>Universal Data Generator target adapters: the ISink factory and storage sinks (files, ADLS, Blob, SQL, Cosmos, Event Hubs, and more).</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Files.DataLake" Version="12.21.0" />

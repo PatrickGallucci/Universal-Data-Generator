@@ -1,0 +1,28 @@
+{
+  "build": {
+    "content": [
+      { "files": [ "**/*.{md,yml}" ], "src": "docs", "dest": "docs" },
+      { "files": [ "toc.yml", "index.md" ] }
+    ],
+    "resource": [
+      { "files": [ "docs/architecture/diagrams/**" ] }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "Universal Data Generator",
+      "_appTitle": "Universal Data Generator",
+      "_enableSearch": true,
+      "_appFooter": "Universal Data Generator — synthetic data engine",
+      "_gitContribute": {
+        "repo": "https://github.com/PatrickGallucci/Universal-Data-Generator",
+        "branch": "main"
+      }
+    },
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "postProcessors": [],
+    "keepFileLink": false,
+    "disableGitFeatures": false
+  }
+}

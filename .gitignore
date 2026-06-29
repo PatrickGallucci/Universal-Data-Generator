@@ -3,3 +3,6 @@ obj/
 *.user
 .vs/
 out/
+_site/
+api/.manifest
+artifacts/

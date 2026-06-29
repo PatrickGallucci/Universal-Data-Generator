@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-28
+
 ### Changed
 
 - Renamed the project to Universal Data Generator (short name UniDataGen). The solution is `UniDataGen.slnx`, all
@@ -38,6 +40,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Output localization for generated values: a run-level `locale` (default `en-US`) with a per-entity override,
   a `LocaleCatalog` of supported locales and languages stored as embedded configuration resources, validation
   of configured locales, the locale carried into the Foundry prompt, and locale selectors in the WinForms client.
+
+### Packaging
+
+- The six `src/` libraries (`Abstractions`, `Core`, `Configuration`, `Generation.Foundry`, `Targets`,
+  `Observability`) carry NuGet metadata and pack as `0.2.0` packages. Versioning and shared package
+  metadata live in `Directory.Build.props`.
+- A DocFX documentation site is published to GitHub Pages from `docfx.json` and the `docs/` content via
+  the `Docs` workflow. CI (`ci.yml`) builds and tests on every push; the `Release` workflow packs and
+  pushes the libraries to NuGet on a `v*.*.*` tag.
 
 ## [0.1.0] - 2026-06-28
 
@@ -83,5 +94,6 @@ generation, six concrete target adapters, four hosts, and Application Insights l
 - Logging uses `ILogger` with Application Insights at the host boundary. See
   [ADR-0006](docs/architecture/decisions/adr-0006-ilogger-application-insights.md).
 
-[Unreleased]: https://example.com/Universal Data Generator/compare/v0.1.0...HEAD
-[0.1.0]: https://example.com/Universal Data Generator/releases/tag/v0.1.0
+[Unreleased]: https://github.com/PatrickGallucci/Universal-Data-Generator/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/PatrickGallucci/Universal-Data-Generator/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/PatrickGallucci/Universal-Data-Generator/releases/tag/v0.1.0
