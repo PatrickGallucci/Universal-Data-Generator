@@ -24,7 +24,7 @@ API reference.
 ## Architecture
 
 - [Overview](./architecture/overview.md) — components, data flow, and diagrams.
-- [Decision records](./architecture/decisions/) — the design decisions and their trade-offs.
+- [Decision records](./architecture/decisions/README.md) — the design decisions and their trade-offs.
 
 ## API reference
 

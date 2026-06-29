@@ -10,7 +10,7 @@ The target framework is `net10.0` / C# 14. The WinForms and configuration-editor
 
 ## Start here
 
-- [Documentation home](docs/) — the full guide index.
+- [Documentation home](docs/README.md) — the full guide index.
 - [Installation](docs/getting-started/installation.md) — prerequisites and how to build.
 - [Quick start](docs/getting-started/quick-start.md) — generate data offline in a few minutes.
 - [Targets](docs/guides/targets.md) — the twenty supported sink types.
