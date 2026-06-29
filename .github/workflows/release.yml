@@ -18,7 +18,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - run: dotnet build UniDataGen.slnx -c Release --nologo -p:EnableWindowsTargeting=true
-      - run: dotnet pack src/UniDataGen.Abstractions src/UniDataGen.Core src/UniDataGen.Configuration src/UniDataGen.Generation.Foundry src/UniDataGen.Targets src/UniDataGen.Observability -c Release -o artifacts --no-build
+      - run: dotnet pack UniDataGen.slnx -c Release -o artifacts --no-build -p:EnableWindowsTargeting=true
       - name: NuGet login (OIDC)
         id: login
         uses: NuGet/login@v1
